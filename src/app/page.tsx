@@ -86,6 +86,25 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Live example CTA */}
+      <section className="max-w-5xl mx-auto px-6 pb-16 flex justify-center">
+        <Link
+          href="/examples/rewardly"
+          className="inline-flex items-center gap-2 text-sm font-semibold px-5 py-2.5 rounded-full transition-colors"
+          style={{
+            background: "rgba(245,166,35,0.12)",
+            border: "1px solid rgba(245,166,35,0.35)",
+            color: "#F5A623",
+          }}
+        >
+          <span
+            className="inline-block w-2 h-2 rounded-full flex-shrink-0"
+            style={{ backgroundColor: "#ef4444", boxShadow: "0 0 0 0 rgba(239,68,68,0.7)", animation: "pulse 2s infinite" }}
+          />
+          🔴 Live right now: Watch Rewardly launch in real-time →
+        </Link>
+      </section>
+
       {/* Footer */}
       <footer className="border-t border-[#21262D] py-8">
         <p className="text-center text-[#8B949E] text-sm">
