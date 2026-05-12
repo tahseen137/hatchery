@@ -551,7 +551,7 @@ function TaskItem({
 
   return (
     <div
-      className="rounded-lg border transition-all duration-200"
+      className="rounded-lg border transition-all duration-200 hover:brightness-110"
       style={{
         background: completed
           ? "rgba(245,158,11,0.06)"
@@ -665,6 +665,16 @@ function DaySection({
     30: "You actually did it. 30 days. Full flight 🏆",
   };
 
+  const genericMessages = [
+    `Day ${day} done! 🔥`,
+    "Crushed it! Keep going 💪",
+    "One step closer 🚀",
+    "You're on fire! 🎯",
+    "That's how it's done! ✅",
+  ];
+
+  const defaultMsg = genericMessages[day % genericMessages.length];
+
   return (
     <div className="mb-6">
       <div className="flex items-center gap-3 mb-2">
@@ -708,7 +718,7 @@ function DaySection({
             animation: "slide-up 0.3s ease-out",
           }}
         >
-          {celebrationMessages[day] ?? `Day ${day} done! You're on fire 🔥`}
+          {celebrationMessages[day] ?? defaultMsg}
         </div>
       )}
     </div>
@@ -744,6 +754,24 @@ export default function PlanPageClient() {
 
   const tasks = generatePlan(selectedPlatforms);
   const totalXp = tasks.reduce((sum, t) => sum + t.xp, 0);
+
+  if (selectedPlatforms.length === 0) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center text-center px-6 pb-24" style={{ background: "#0a0a0a" }}>
+        <p className="text-5xl mb-4">🐣</p>
+        <h2 className="text-white text-xl font-bold mb-2">No platforms selected</h2>
+        <p className="text-zinc-400 text-sm mb-6 max-w-xs">
+          Go back and pick at least one platform so we can build your plan.
+        </p>
+        <a
+          href="/onboarding"
+          className="bg-[#F5A623] text-black font-bold px-6 py-3 rounded-xl text-sm hover:bg-[#E09415] transition-colors"
+        >
+          ← Pick platforms
+        </a>
+      </div>
+    );
+  }
 
   // State
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
@@ -857,7 +885,7 @@ export default function PlanPageClient() {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: "#0a0a0a" }}>
+    <div className="min-h-screen pb-24" style={{ background: "#0a0a0a" }}>
       <div className="max-w-2xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-6">
@@ -907,7 +935,7 @@ export default function PlanPageClient() {
           <p className="text-zinc-500 text-xs font-medium mb-3 uppercase tracking-wider">
             Achievements
           </p>
-          <div className="flex items-start gap-3 flex-wrap">
+          <div className="flex items-start gap-3 overflow-x-auto pb-1 scrollbar-none">
             {badges.map((badge) => (
               <BadgeItem
                 key={badge.id}
@@ -919,7 +947,7 @@ export default function PlanPageClient() {
         </div>
 
         {/* Week Tabs */}
-        <div className="flex gap-2 mb-6 flex-wrap">
+        <div className="flex gap-2 mb-6 overflow-x-auto pb-1 scrollbar-none">
           {[1, 2, 3, 4].map((w) => {
             const pct = weekCompletionPct(w);
             const isActive = activeWeek === w;

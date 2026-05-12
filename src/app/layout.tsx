@@ -5,7 +5,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Hatchery — Distribution Intelligence for Indie Founders",
   description:
-    "Platform-specific playbooks for indie founders. Know exactly where to go and what to do — on Reddit, Product Hunt, Chrome Web Store, and beyond.",
+    "Hatchery gives indie founders a platform-specific 30-day launch playbook. Know exactly where to go and what to do.",
 };
 
 export default function RootLayout({

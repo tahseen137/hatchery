@@ -62,6 +62,28 @@ const DISTRIBUTION_PLATFORMS = [
   "Personal blog/SEO",
 ];
 
+const PLATFORM_EMOJIS: Record<string, string> = {
+  "Reddit": "🔴",
+  "Product Hunt": "🐱",
+  "BetaList": "📋",
+  "Chrome Web Store": "🌐",
+  "Twitter/X": "🐦",
+  "Newsletter placements": "📧",
+  "Hacker News (Show HN)": "🔶",
+  "Personal blog/SEO": "✍️",
+};
+
+// Map display names → plan engine IDs
+const PLATFORM_TO_ID: Record<string, string> = {
+  "Reddit": "reddit",
+  "Product Hunt": "producthunt",
+  "BetaList": "betalist",
+  "Chrome Web Store": "chrome",
+  "Twitter/X": "twitter",
+  "Newsletter placements": "newsletter",
+  "Hacker News (Show HN)": "hn",
+};
+
 function RadioGroup({
   options,
   value,
@@ -173,6 +195,15 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+function PlatformsValue({ platforms }: { platforms: string[] }) {
+  if (platforms.length === 0) return <span className="text-white text-sm font-medium">—</span>;
+  return (
+    <span className="text-white text-sm font-medium text-right">
+      {platforms.map((p) => `${PLATFORM_EMOJIS[p] ?? ""} ${p}`).join(", ")}
+    </span>
+  );
+}
+
 export default function OnboardingPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
@@ -196,6 +227,9 @@ export default function OnboardingPage() {
   const back = () => setStep((s) => Math.max(s - 1, 1));
 
   const generate = () => {
+    const platformIds = formData.willUsePlatforms
+      .map((p) => PLATFORM_TO_ID[p])
+      .filter(Boolean);
     const params = new URLSearchParams({
       productName: formData.productName,
       oneLiner: formData.oneLiner,
@@ -205,7 +239,7 @@ export default function OnboardingPage() {
       hangoutPlatforms: formData.hangoutPlatforms.join(","),
       launchStatus: formData.launchStatus,
       currentUsers: formData.currentUsers,
-      willUsePlatforms: formData.willUsePlatforms.join(","),
+      platforms: platformIds.join(","),
     });
     router.push(`/plan?${params.toString()}`);
   };
@@ -213,11 +247,11 @@ export default function OnboardingPage() {
   const progressPct = (step / TOTAL_STEPS) * 100;
 
   return (
-    <main className="flex-1 max-w-xl mx-auto w-full px-6 py-12">
+    <main className="flex-1 min-h-screen max-w-xl mx-auto w-full px-6 py-12 pb-24">
       {/* Progress bar */}
-      <div className="w-full h-1 bg-[#21262D] rounded-full mb-10 overflow-hidden">
+      <div className="w-full h-1.5 bg-[#21262D] rounded-full mb-10 overflow-hidden">
         <div
-          className="h-full bg-[#F5A623] rounded-full transition-all duration-300"
+          className="h-full bg-[#F5A623] rounded-full transition-all duration-500 ease-out"
           style={{ width: `${progressPct}%` }}
         />
       </div>
@@ -230,7 +264,7 @@ export default function OnboardingPage() {
       {step === 1 && (
         <div>
           <h1 className="text-2xl font-bold text-white mb-8">
-            What are you building?
+            What are you launching? 🚀
           </h1>
           <div className="flex flex-col gap-5">
             <div>
@@ -294,7 +328,7 @@ export default function OnboardingPage() {
       {step === 2 && (
         <div>
           <h1 className="text-2xl font-bold text-white mb-8">
-            Who&apos;s it for?
+            Who&apos;s it for? 🎯
           </h1>
           <div className="flex flex-col gap-6">
             <div>
@@ -325,7 +359,7 @@ export default function OnboardingPage() {
       {step === 3 && (
         <div>
           <h1 className="text-2xl font-bold text-white mb-8">
-            What&apos;s your launch situation?
+            Where are you right now? 📍
           </h1>
           <div className="flex flex-col gap-6">
             <div>
@@ -356,7 +390,7 @@ export default function OnboardingPage() {
       {step === 4 && (
         <div>
           <h1 className="text-2xl font-bold text-white mb-2">
-            Where are you willing to show up?
+            Where will you show up? 💪
           </h1>
           <p className="text-[#8B949E] text-sm mb-6">
             We&apos;ll only include platforms in your plan that you select.
@@ -373,7 +407,7 @@ export default function OnboardingPage() {
       {step === 5 && (
         <div>
           <h1 className="text-2xl font-bold text-white mb-2">
-            Ready to generate your plan?
+            Ready to launch? Let&apos;s go! 🔥
           </h1>
           <p className="text-[#8B949E] text-sm mb-8">
             Here&apos;s a summary of what you told us.
@@ -396,17 +430,20 @@ export default function OnboardingPage() {
               label="Current users"
               value={formData.currentUsers || "—"}
             />
-            <SummaryRow
-              label="Platforms to use"
-              value={formData.willUsePlatforms.join(", ") || "—"}
-            />
+            <div className="flex justify-between gap-4 py-3">
+              <span className="text-[#8B949E] text-sm">Platforms to use</span>
+              <PlatformsValue platforms={formData.willUsePlatforms} />
+            </div>
           </div>
-          <button
-            onClick={generate}
-            className="w-full bg-[#F5A623] text-black font-bold px-8 py-4 rounded-xl text-lg hover:bg-[#E09415] transition-colors shadow-lg shadow-[#F5A623]/20"
-          >
-            Generate my 30-day plan →
-          </button>
+          <div className="relative">
+            <div className="absolute inset-0 rounded-xl bg-[#F5A623]/25 blur-lg pointer-events-none" />
+            <button
+              onClick={generate}
+              className="relative w-full bg-[#F5A623] text-black font-bold px-8 py-5 rounded-xl text-xl hover:bg-[#E09415] transition-colors shadow-xl shadow-[#F5A623]/30 hover-glow"
+            >
+              Generate my 30-day plan →
+            </button>
+          </div>
         </div>
       )}
 
