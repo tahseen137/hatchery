@@ -205,7 +205,7 @@ export default function OnboardingPage() {
       hangoutPlatforms: formData.hangoutPlatforms.join(","),
       launchStatus: formData.launchStatus,
       currentUsers: formData.currentUsers,
-      willUsePlatforms: formData.willUsePlatforms.join(","),
+      platforms: formData.willUsePlatforms.join(","),
     });
     router.push(`/plan?${params.toString()}`);
   };
