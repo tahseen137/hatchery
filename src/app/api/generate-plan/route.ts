@@ -102,10 +102,17 @@ Output ONLY the JSON.`;
       const encoder = new TextEncoder();
       let buffer = "";
 
+      let firstChunkSent = false;
       try {
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
+
+          if (!firstChunkSent) {
+            firstChunkSent = true;
+            const raw = new TextDecoder().decode(value);
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify('RAW_FIRST_CHUNK:' + raw.substring(0, 300))}\n\n`));
+          }
 
           buffer += decoder.decode(value, { stream: true });
           const lines = buffer.split("\n");
