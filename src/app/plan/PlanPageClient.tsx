@@ -854,11 +854,11 @@ export default function PlanPageClient() {
 
             if (data === "[DONE]") {
               try {
-                const stripped = accumulated
-                  .replace(/^```(?:json)?\s*/m, "")
-                  .replace(/\s*```\s*$/m, "")
-                  .trim();
-                const parsed: AiInsights = JSON.parse(stripped);
+                // Extract the outermost {...} block regardless of surrounding text/markdown
+                const jsonMatch = accumulated.match(/\{[\s\S]*\}/);
+                if (!jsonMatch) throw new Error("no JSON found");
+                const parsed: AiInsights = JSON.parse(jsonMatch[0]);
+                if (!parsed.platformInsights || !parsed.biggestMistake) throw new Error("missing fields");
                 setAiInsights(parsed);
                 setAiStatus("done");
               } catch {
