@@ -49,6 +49,7 @@ Output ONLY the JSON.`;
         stream: true,
         options: { temperature: 0.6, num_predict: 300 },
       }),
+      redirect: 'follow',
     });
   } catch (e) {
     const msg = `ERR:FETCH_FAILED:${String(e)}`;
