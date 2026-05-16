@@ -47,7 +47,8 @@ Output ONLY the JSON.`;
         model: ollamaModel,
         messages: [{ role: "user", content: prompt }],
         stream: true,
-        options: { temperature: 0.6, num_predict: 300 },
+        think: false,
+        options: { temperature: 0.6, num_predict: 2048 },
       }),
       redirect: 'follow',
     });
@@ -73,7 +74,8 @@ Output ONLY the JSON.`;
             model: ollamaModel,
             messages: [{ role: "user", content: prompt }],
             stream: true,
-            options: { temperature: 0.6, num_predict: 300 },
+            think: false,
+            options: { temperature: 0.6, num_predict: 2048 },
           }),
         });
       } catch (e) {
@@ -125,9 +127,11 @@ Output ONLY the JSON.`;
                 message?: { content?: string };
                 done?: boolean;
               };
-              if (parsed.message?.content) {
+              // Skip thinking-only chunks (gemma4:26b extended thinking phase)
+              const content = parsed.message?.content;
+              if (content) {
                 controller.enqueue(
-                  encoder.encode(`data: ${JSON.stringify(parsed.message.content)}\n\n`)
+                  encoder.encode(`data: ${JSON.stringify(content)}\n\n`)
                 );
               }
               if (parsed.done) {
