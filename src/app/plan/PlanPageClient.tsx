@@ -965,6 +965,11 @@ export default function PlanPageClient() {
           </p>
         </div>
 
+        {/* DEBUG — remove after diagnosis */}
+        <div style={{background:"rgba(255,0,0,0.15)",border:"1px solid red",borderRadius:8,padding:"8px 12px",marginBottom:12,fontSize:12,fontFamily:"monospace",color:"#fca5a5"}}>
+          DEBUG: platforms={selectedPlatforms.length} | aiStatus={aiStatus} | streamLen={streamingText.length}
+        </div>
+
         {/* AI Insights */}
         {selectedPlatforms.length > 0 && aiStatus !== "idle" && (
           <div
