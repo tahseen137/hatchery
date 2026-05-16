@@ -86,8 +86,10 @@ Output ONLY the JSON.`;
   }
 
   if (!ollamaResp.ok || !ollamaResp.body) {
-    const location = ollamaResp.headers.get('location') ?? '';
-    const msg = `ERR:OLLAMA_STATUS:${ollamaResp.status}:location=${location}`;
+    const hdrs: string[] = [];
+    ollamaResp.headers.forEach((v, k) => hdrs.push(`${k}:${v}`));
+    const body307 = await ollamaResp.text().catch(() => '');
+    const msg = `ERR:STATUS:${ollamaResp.status} headers=[${hdrs.join('|')}] body=${body307.substring(0, 200)}`;
     return new Response(`data: ${JSON.stringify(msg)}\n\ndata: [DONE]\n\n`, {
       headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache" },
     });
