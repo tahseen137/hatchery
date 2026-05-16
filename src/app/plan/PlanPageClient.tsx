@@ -8,14 +8,11 @@ import { useState, useEffect, useCallback, useRef } from "react";
 interface PlatformInsight {
   communities?: string[];
   hook?: string;
-  proTip?: string;
-  timing?: string;
 }
 
 interface AIInsights {
   platformInsights?: Record<string, PlatformInsight>;
-  customOneLiner?: string;
-  biggestMistakeToAvoid?: string;
+  biggestMistake?: string;
 }
 
 type PlatformId =
@@ -797,35 +794,32 @@ function PlatformInsightCard({
         borderLeftColor: "#F59E0B",
       }}
     >
-      <p
-        className="text-xs font-bold uppercase tracking-wider mb-3"
-        style={{ color: "#F59E0B" }}
-      >
-        ✨ AI Insights — {platformName}
+      <p className="text-sm font-semibold text-amber-400 mb-2">
+        🤖 AI Insight — {platformName}
       </p>
       {insight.communities && insight.communities.length > 0 && (
-        <div className="mb-1.5">
-          <span className="text-zinc-500 text-xs font-medium">Target: </span>
-          <span className="text-zinc-300 text-xs">{insight.communities.join(", ")}</span>
+        <div className="flex flex-wrap gap-1.5 mb-2">
+          <span className="text-xs text-zinc-500 self-center">Communities:</span>
+          {insight.communities.map((c) => (
+            <span
+              key={c}
+              className="text-xs px-2 py-0.5 rounded-full font-mono"
+              style={{
+                background: "rgba(245,158,11,0.12)",
+                color: "#FCD34D",
+                border: "1px solid rgba(245,158,11,0.25)",
+              }}
+            >
+              {c}
+            </span>
+          ))}
         </div>
       )}
       {insight.hook && (
-        <div className="mb-1.5">
-          <span className="text-zinc-500 text-xs font-medium">Hook: </span>
-          <span className="text-zinc-300 text-xs">{insight.hook}</span>
-        </div>
-      )}
-      {insight.proTip && (
-        <div className="mb-1.5">
-          <span className="text-zinc-500 text-xs font-medium">Pro tip: </span>
-          <span className="text-zinc-300 text-xs">{insight.proTip}</span>
-        </div>
-      )}
-      {insight.timing && (
-        <div>
-          <span className="text-zinc-500 text-xs font-medium">Timing: </span>
-          <span className="text-zinc-300 text-xs">{insight.timing}</span>
-        </div>
+        <p className="text-sm text-zinc-300 leading-snug">
+          <span className="text-zinc-500 text-xs">Hook: </span>
+          &ldquo;{insight.hook}&rdquo;
+        </p>
       )}
     </div>
   );
@@ -846,9 +840,6 @@ export default function PlanPageClient() {
   const productType = searchParams.get("productType") ?? "";
   const targetUser = searchParams.get("targetUser") ?? "";
   const willUsePlatformsParam = searchParams.get("willUsePlatforms") ?? "";
-  const launchStatus = searchParams.get("launchStatus") ?? "";
-  const currentUsers = searchParams.get("currentUsers") ?? "";
-  const hangoutPlatformsParam = searchParams.get("hangoutPlatforms") ?? "";
 
   const tasks = generatePlan(selectedPlatforms);
   const totalXp = tasks.reduce((sum, t) => sum + t.xp, 0);
@@ -869,10 +860,6 @@ export default function PlanPageClient() {
   // Fetch AI insights on mount
   useEffect(() => {
     const willUsePlatforms = willUsePlatformsParam.split(",").map((p) => p.trim()).filter(Boolean);
-    const hangoutPlatforms = hangoutPlatformsParam.split(",").map((p) => p.trim()).filter(Boolean);
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
 
     fetch("/api/generate-plan", {
       method: "POST",
@@ -882,26 +869,15 @@ export default function PlanPageClient() {
         productType,
         audience: targetUser,
         platforms: willUsePlatforms,
-        launchStatus,
-        userCount: currentUsers,
-        hangoutPlatforms,
       }),
-      signal: controller.signal,
+      signal: AbortSignal.timeout(25000),
     })
       .then((r) => r.json())
       .then((data) => {
         if (data.success) setInsights(data.insights);
       })
       .catch(() => {})
-      .finally(() => {
-        clearTimeout(timeoutId);
-        setIsLoadingInsights(false);
-      });
-
-    return () => {
-      controller.abort();
-      clearTimeout(timeoutId);
-    };
+      .finally(() => setIsLoadingInsights(false));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load from localStorage on mount
@@ -1031,12 +1007,6 @@ export default function PlanPageClient() {
             for{" "}
             <span className="text-amber-400 font-semibold">{productName}</span>
           </p>
-          {insights?.customOneLiner && (
-            <p className="mt-2 text-sm text-zinc-400">
-              💡 Suggested one-liner:{" "}
-              <span className="text-zinc-200 italic">{insights.customOneLiner}</span>
-            </p>
-          )}
         </div>
 
         {/* XP Bar */}
@@ -1077,8 +1047,8 @@ export default function PlanPageClient() {
           <AILoadingCard />
         ) : (
           <>
-            {insights?.biggestMistakeToAvoid && (
-              <MistakeWarningCard message={insights.biggestMistakeToAvoid} />
+            {insights?.biggestMistake && (
+              <MistakeWarningCard message={insights.biggestMistake} />
             )}
             {insights?.platformInsights &&
               Object.entries(insights.platformInsights).map(([name, insight]) => (

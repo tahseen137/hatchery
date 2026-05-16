@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
+export const maxDuration = 60
+
 const OLLAMA_URL = process.env.OLLAMA_URL ?? "https://sage-ollama.rewardly.ca";
 const OLLAMA_API_KEY = process.env.OLLAMA_API_KEY ?? "Rewardly0705032";
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL ?? "gemma4:26b";
@@ -7,47 +9,31 @@ const OLLAMA_MODEL = process.env.OLLAMA_MODEL ?? "gemma4:26b";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { productName, productType, audience, platforms, launchStatus, userCount } = body;
+    const { productName, productType, audience, platforms } = body;
 
-    const prompt = `You are a distribution expert for indie founders. Given this product, generate specific, actionable distribution advice.
+    const prompt = `You are a startup distribution expert. Give specific, actionable advice for this product launch.
 
-Product: ${productName}
-Type: ${productType}
-Target audience: ${audience}
-Selected platforms: ${Array.isArray(platforms) ? platforms.join(", ") : platforms}
-Launch status: ${launchStatus}
-Current users: ${userCount}
+Product: ${productName} (${productType})
+Audience: ${audience}
+Platforms to use: ${Array.isArray(platforms) ? platforms.join(', ') : platforms}
 
-For each selected platform, provide:
-1. The 2-3 most relevant specific communities/subreddits/channels to target (with exact names)
-2. The best angle/hook to lead with for this specific product and audience
-3. One specific tip that most founders miss on this platform
-4. The optimal timing (day of week, time of day if relevant)
-
-Respond in JSON format:
+For each platform listed, respond with ONLY this JSON (no explanation, no markdown):
 {
   "platformInsights": {
     "Reddit": {
-      "communities": ["r/specific1", "r/specific2"],
-      "hook": "Lead with...",
-      "proTip": "Most founders...",
-      "timing": "Tuesday-Thursday..."
+      "communities": ["r/name1", "r/name2"],
+      "hook": "One specific opening angle for this product"
     },
     "Product Hunt": {
-      "communities": ["Product Hunt launch day community"],
-      "hook": "Lead with...",
-      "proTip": "Most founders...",
-      "timing": "Tuesday-Thursday 12:01am PST..."
+      "communities": ["hunters to target"],
+      "hook": "Best tagline angle"
     }
   },
-  "customOneLiner": "A sharper one-liner suggestion for this specific product",
-  "biggestMistakeToAvoid": "The #1 thing founders of this type of product get wrong"
+  "biggestMistake": "One sentence on the #1 mistake founders make launching this type of product"
 }
 
-Only include platforms from the selected list. Be specific, not generic.`;
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
+Only include platforms from: ${Array.isArray(platforms) ? platforms.join(', ') : platforms}
+Be specific to this product. No generic advice.`;
 
     try {
       const response = await fetch(`${OLLAMA_URL}/api/chat`, {
@@ -61,10 +47,8 @@ Only include platforms from the selected list. Be specific, not generic.`;
           messages: [{ role: "user", content: prompt }],
           stream: false,
         }),
-        signal: controller.signal,
+        signal: AbortSignal.timeout(25000),
       });
-
-      clearTimeout(timeoutId);
 
       if (!response.ok) {
         return NextResponse.json({ success: false, error: `Ollama returned ${response.status}` });
@@ -80,7 +64,6 @@ Only include platforms from the selected list. Be specific, not generic.`;
       const parsed = JSON.parse(jsonStr);
       return NextResponse.json({ success: true, insights: parsed });
     } catch (err) {
-      clearTimeout(timeoutId);
       const message = err instanceof Error ? err.message : "Unknown error";
       return NextResponse.json({ success: false, error: message });
     }
