@@ -124,6 +124,7 @@ Output ONLY the JSON.`;
                 );
               }
               if (parsed.done) {
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify('STREAM_DONE:buffer_remaining=' + buffer.length)}\n\n`));
                 controller.enqueue(encoder.encode("data: [DONE]\n\n"));
               }
             } catch {
@@ -131,7 +132,8 @@ Output ONLY the JSON.`;
             }
           }
         }
-      } catch {
+      } catch (streamErr) {
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify('ERR:STREAM_CATCH:' + String(streamErr))}\n\n`));
         controller.enqueue(encoder.encode("data: [DONE]\n\n"));
       } finally {
         controller.close();
