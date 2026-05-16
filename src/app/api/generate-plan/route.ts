@@ -12,7 +12,8 @@ export async function POST(req: Request) {
   const ollamaModel = process.env.OLLAMA_MODEL ?? "gemma4:26b";
 
   if (!ollamaUrl || !platforms?.length) {
-    return new Response("data: [DONE]\n\n", {
+    const reason = !ollamaUrl ? `NO_OLLAMA_URL(key=${Object.keys(process.env).filter(k=>k.includes('OLLAMA')).join(',')})` : 'NO_PLATFORMS';
+    return new Response(`data: ${JSON.stringify('ERR:' + reason)}\n\ndata: [DONE]\n\n`, {
       headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache" },
     });
   }
@@ -49,14 +50,16 @@ Output ONLY the JSON.`;
         options: { temperature: 0.6, num_predict: 300 },
       }),
     });
-  } catch {
-    return new Response("data: [DONE]\n\n", {
+  } catch (e) {
+    const msg = `ERR:FETCH_FAILED:${String(e)}`;
+    return new Response(`data: ${JSON.stringify(msg)}\n\ndata: [DONE]\n\n`, {
       headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache" },
     });
   }
 
   if (!ollamaResp.ok || !ollamaResp.body) {
-    return new Response("data: [DONE]\n\n", {
+    const msg = `ERR:OLLAMA_STATUS:${ollamaResp.status}`;
+    return new Response(`data: ${JSON.stringify(msg)}\n\ndata: [DONE]\n\n`, {
       headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache" },
     });
   }
