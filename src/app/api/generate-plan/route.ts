@@ -37,7 +37,7 @@ Output ONLY the JSON.`;
 
   let ollamaResp: Response;
   try {
-    ollamaResp = await fetch(`${ollamaUrl}/api/chat`.replace(/\/api\/chat\/api\/chat/, '/api/chat'), {
+    ollamaResp = await fetch(`${ollamaUrl.replace(/\/$/, '')}/api/chat`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -86,7 +86,7 @@ Output ONLY the JSON.`;
   }
 
   if (!ollamaResp.ok || !ollamaResp.body) {
-    const calledUrl = `${ollamaUrl}/api/chat`.replace(/\/api\/chat\/api\/chat/, '/api/chat');
+    const calledUrl = `${ollamaUrl.replace(/\/$/, '')}/api/chat`;
     const msg = `ERR:STATUS:${ollamaResp.status} calledUrl=${calledUrl} model=${ollamaModel}`;
     return new Response(`data: ${JSON.stringify(msg)}\n\ndata: [DONE]\n\n`, {
       headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache" },
