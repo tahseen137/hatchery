@@ -58,8 +58,36 @@ Output ONLY the JSON.`;
     });
   }
 
+  // Handle redirects manually (edge runtime doesn't reliably follow POST redirects)
+  if (ollamaResp.status === 307 || ollamaResp.status === 308 || ollamaResp.status === 301 || ollamaResp.status === 302) {
+    const location = ollamaResp.headers.get('location');
+    if (location) {
+      try {
+        ollamaResp = await fetch(location, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${ollamaApiKey ?? ""}`,
+          },
+          body: JSON.stringify({
+            model: ollamaModel,
+            messages: [{ role: "user", content: prompt }],
+            stream: true,
+            options: { temperature: 0.6, num_predict: 300 },
+          }),
+        });
+      } catch (e) {
+        const msg = `ERR:REDIRECT_FETCH_FAILED:${location}:${String(e)}`;
+        return new Response(`data: ${JSON.stringify(msg)}\n\ndata: [DONE]\n\n`, {
+          headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache" },
+        });
+      }
+    }
+  }
+
   if (!ollamaResp.ok || !ollamaResp.body) {
-    const msg = `ERR:OLLAMA_STATUS:${ollamaResp.status}`;
+    const location = ollamaResp.headers.get('location') ?? '';
+    const msg = `ERR:OLLAMA_STATUS:${ollamaResp.status}:location=${location}`;
     return new Response(`data: ${JSON.stringify(msg)}\n\ndata: [DONE]\n\n`, {
       headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache" },
     });
