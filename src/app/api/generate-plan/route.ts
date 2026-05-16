@@ -17,21 +17,21 @@ export async function POST(req: Request) {
   }
 
   const platformList = platforms.join(", ");
-  const platformKeys = platforms.map((p) => `"${p}"`).join(", ");
 
-  const prompt = `You are an expert startup launch advisor. Respond with ONLY a valid JSON object — no markdown, no explanation, no code fences.
+  // Simplified prompt — no per-platform JSON keys (avoids key mismatch issues)
+  const prompt = `You are a startup launch expert. Reply with ONLY a JSON object, no markdown, no explanation.
 
 Product: "${productName}"
-Selected distribution platforms: ${platformList}
+Platforms: ${platformList}
 
-Return exactly this structure:
+JSON format:
 {
-  "platformInsights": { ${platformKeys.replace(/"/g, '"')}: "<2-3 sentence tactical insight specific to launching ${productName} on this platform>" },
-  "biggestMistake": "<one concrete mistake founders typically make when launching on these specific platforms, 1-2 sentences>"
+  "hook": "One punchy sentence to open every post on these platforms",
+  "biggestMistake": "The #1 mistake founders make launching on ${platformList}",
+  "quickWin": "The single fastest action to get first traction"
 }
 
-Include one entry in platformInsights for each of these platforms: ${platformList}.
-Output ONLY the JSON object.`;
+Output ONLY the JSON.`;
 
   let ollamaResp: Response;
   try {
@@ -45,7 +45,7 @@ Output ONLY the JSON object.`;
         model: ollamaModel,
         messages: [{ role: "user", content: prompt }],
         stream: true,
-        options: { temperature: 0.5, num_predict: 512 },
+        options: { temperature: 0.6, num_predict: 300 },
       }),
     });
   } catch {

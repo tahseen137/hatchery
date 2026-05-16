@@ -6,8 +6,9 @@ import { useState, useEffect, useCallback, useRef } from "react";
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface AiInsights {
-  platformInsights: Record<string, string>;
+  hook: string;
   biggestMistake: string;
+  quickWin: string;
 }
 
 type AiStatus = "idle" | "streaming" | "done" | "error";
@@ -858,10 +859,11 @@ export default function PlanPageClient() {
                 const jsonMatch = accumulated.match(/\{[\s\S]*\}/);
                 if (!jsonMatch) throw new Error("no JSON found");
                 const parsed: AiInsights = JSON.parse(jsonMatch[0]);
-                if (!parsed.platformInsights || !parsed.biggestMistake) throw new Error("missing fields");
+                if (!parsed.biggestMistake) throw new Error("missing fields");
                 setAiInsights(parsed);
                 setAiStatus("done");
               } catch {
+                // Keep streamingText visible so user sees raw output even if parse failed
                 setAiStatus("error");
               }
               return;
@@ -964,7 +966,7 @@ export default function PlanPageClient() {
         </div>
 
         {/* AI Insights */}
-        {selectedPlatforms.length > 0 && aiStatus !== "error" && aiStatus !== "idle" && (
+        {selectedPlatforms.length > 0 && aiStatus !== "idle" && (
           <div
             className="rounded-xl p-4 mb-4"
             style={{
@@ -973,37 +975,47 @@ export default function PlanPageClient() {
             }}
           >
             <p className="text-zinc-500 text-xs font-medium mb-3 uppercase tracking-wider">
-              AI Insights
+              🤖 AI Insights
             </p>
 
-            {aiStatus === "streaming" && (
+            {(aiStatus === "streaming" || (aiStatus === "error" && streamingText)) && (
               <div className="font-mono text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed break-words">
                 {streamingText || <span className="text-zinc-600">Analyzing your launch strategy…</span>}
-                <span
-                  className="inline-block w-2 h-4 ml-0.5 align-middle animate-pulse"
-                  style={{ background: "#F59E0B" }}
-                />
+                {aiStatus === "streaming" && (
+                  <span
+                    className="inline-block w-2 h-4 ml-0.5 align-middle animate-pulse"
+                    style={{ background: "#F59E0B" }}
+                  />
+                )}
               </div>
             )}
 
             {aiStatus === "done" && aiInsights && (
-              <>
-                <div className="flex flex-col gap-3 mb-3">
-                  {Object.entries(aiInsights.platformInsights).map(([platform, insight]) => {
-                    const info = PLATFORM_INFO[platform as PlatformId];
-                    return (
-                      <div key={platform}>
-                        <p
-                          className="text-xs font-semibold mb-1"
-                          style={{ color: info?.color ?? "#F59E0B" }}
-                        >
-                          {info?.emoji ?? ""} {info?.name ?? platform}
-                        </p>
-                        <p className="text-sm text-zinc-400 leading-relaxed">{insight}</p>
-                      </div>
-                    );
-                  })}
-                </div>
+              <div className="flex flex-col gap-3">
+                {aiInsights.hook && (
+                  <div
+                    className="rounded-lg p-3"
+                    style={{
+                      background: "rgba(245,158,11,0.08)",
+                      border: "1px solid rgba(245,158,11,0.2)",
+                    }}
+                  >
+                    <p className="text-xs font-semibold text-amber-400 mb-1">🎣 Your Hook</p>
+                    <p className="text-sm text-zinc-300 leading-relaxed">{aiInsights.hook}</p>
+                  </div>
+                )}
+                {aiInsights.quickWin && (
+                  <div
+                    className="rounded-lg p-3"
+                    style={{
+                      background: "rgba(34,197,94,0.08)",
+                      border: "1px solid rgba(34,197,94,0.2)",
+                    }}
+                  >
+                    <p className="text-xs font-semibold text-green-400 mb-1">⚡ Quick Win</p>
+                    <p className="text-sm text-zinc-400 leading-relaxed">{aiInsights.quickWin}</p>
+                  </div>
+                )}
                 <div
                   className="rounded-lg p-3"
                   style={{
@@ -1014,7 +1026,7 @@ export default function PlanPageClient() {
                   <p className="text-xs font-semibold text-red-400 mb-1">⚠ Watch Out</p>
                   <p className="text-sm text-zinc-400 leading-relaxed">{aiInsights.biggestMistake}</p>
                 </div>
-              </>
+              </div>
             )}
           </div>
         )}
