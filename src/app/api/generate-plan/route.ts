@@ -12,7 +12,7 @@ export async function POST(req: Request) {
   const ollamaModel = process.env.OLLAMA_MODEL ?? "gemma4:26b";
 
   if (!ollamaUrl || !platforms?.length) {
-    const reason = !ollamaUrl ? `NO_OLLAMA_URL(key=${Object.keys(process.env).filter(k=>k.includes('OLLAMA')).join(',')})` : 'NO_PLATFORMS';
+    const reason = !ollamaUrl ? `NO_OLLAMA_URL(keys=${Object.keys(process.env).filter(k=>k.includes('OLLAMA')).join(',')})` : `NO_PLATFORMS(url=${ollamaUrl})`;
     return new Response(`data: ${JSON.stringify('ERR:' + reason)}\n\ndata: [DONE]\n\n`, {
       headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache" },
     });
@@ -37,7 +37,7 @@ Output ONLY the JSON.`;
 
   let ollamaResp: Response;
   try {
-    ollamaResp = await fetch(`${ollamaUrl}/api/chat`, {
+    ollamaResp = await fetch(`${ollamaUrl}/api/chat`.replace(/\/api\/chat\/api\/chat/, '/api/chat'), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -86,10 +86,8 @@ Output ONLY the JSON.`;
   }
 
   if (!ollamaResp.ok || !ollamaResp.body) {
-    const hdrs: string[] = [];
-    ollamaResp.headers.forEach((v, k) => hdrs.push(`${k}:${v}`));
-    const body307 = await ollamaResp.text().catch(() => '');
-    const msg = `ERR:STATUS:${ollamaResp.status} headers=[${hdrs.join('|')}] body=${body307.substring(0, 200)}`;
+    const calledUrl = `${ollamaUrl}/api/chat`.replace(/\/api\/chat\/api\/chat/, '/api/chat');
+    const msg = `ERR:STATUS:${ollamaResp.status} calledUrl=${calledUrl} model=${ollamaModel}`;
     return new Response(`data: ${JSON.stringify(msg)}\n\ndata: [DONE]\n\n`, {
       headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache" },
     });
