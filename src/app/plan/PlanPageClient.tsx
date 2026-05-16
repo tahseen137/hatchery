@@ -5,6 +5,19 @@ import { useState, useEffect, useCallback, useRef } from "react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+interface PlatformInsight {
+  communities?: string[];
+  hook?: string;
+  proTip?: string;
+  timing?: string;
+}
+
+interface AIInsights {
+  platformInsights?: Record<string, PlatformInsight>;
+  customOneLiner?: string;
+  biggestMistakeToAvoid?: string;
+}
+
 type PlatformId =
   | "reddit"
   | "producthunt"
@@ -731,6 +744,93 @@ function WeekMilestoneBanner({ message }: { message: string }) {
   );
 }
 
+function AILoadingCard() {
+  return (
+    <div className="flex justify-center mb-6">
+      <div
+        className="rounded-xl px-6 py-4 flex items-center gap-3"
+        style={{
+          background: "rgba(245,158,11,0.06)",
+          border: "1px solid rgba(245,158,11,0.2)",
+        }}
+      >
+        <span
+          className="w-2.5 h-2.5 rounded-full flex-shrink-0 animate-pulse"
+          style={{ background: "#F59E0B" }}
+        />
+        <p className="text-amber-400 text-sm font-medium">🥚 Hatching your plan...</p>
+      </div>
+    </div>
+  );
+}
+
+function MistakeWarningCard({ message }: { message: string }) {
+  return (
+    <div
+      className="rounded-xl p-4 mb-6"
+      style={{
+        background: "rgba(239,68,68,0.08)",
+        border: "1px solid rgba(239,68,68,0.3)",
+      }}
+    >
+      <p className="text-sm font-medium" style={{ color: "#FCA5A5" }}>
+        ⚠️ Watch out: {message}
+      </p>
+    </div>
+  );
+}
+
+function PlatformInsightCard({
+  platformName,
+  insight,
+}: {
+  platformName: string;
+  insight: PlatformInsight;
+}) {
+  return (
+    <div
+      className="rounded-xl p-4 mb-4"
+      style={{
+        background: "rgba(245,158,11,0.06)",
+        border: "1px solid rgba(245,158,11,0.25)",
+        borderLeftWidth: "3px",
+        borderLeftColor: "#F59E0B",
+      }}
+    >
+      <p
+        className="text-xs font-bold uppercase tracking-wider mb-3"
+        style={{ color: "#F59E0B" }}
+      >
+        ✨ AI Insights — {platformName}
+      </p>
+      {insight.communities && insight.communities.length > 0 && (
+        <div className="mb-1.5">
+          <span className="text-zinc-500 text-xs font-medium">Target: </span>
+          <span className="text-zinc-300 text-xs">{insight.communities.join(", ")}</span>
+        </div>
+      )}
+      {insight.hook && (
+        <div className="mb-1.5">
+          <span className="text-zinc-500 text-xs font-medium">Hook: </span>
+          <span className="text-zinc-300 text-xs">{insight.hook}</span>
+        </div>
+      )}
+      {insight.proTip && (
+        <div className="mb-1.5">
+          <span className="text-zinc-500 text-xs font-medium">Pro tip: </span>
+          <span className="text-zinc-300 text-xs">{insight.proTip}</span>
+        </div>
+      )}
+      {insight.timing && (
+        <div>
+          <span className="text-zinc-500 text-xs font-medium">Timing: </span>
+          <span className="text-zinc-300 text-xs">{insight.timing}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function PlanPageClient() {
@@ -742,6 +842,14 @@ export default function PlanPageClient() {
     ? platformsParam.split(",").map((p) => p.trim()).filter(Boolean)
     : [];
 
+  // Extra params for AI enrichment
+  const productType = searchParams.get("productType") ?? "";
+  const targetUser = searchParams.get("targetUser") ?? "";
+  const willUsePlatformsParam = searchParams.get("willUsePlatforms") ?? "";
+  const launchStatus = searchParams.get("launchStatus") ?? "";
+  const currentUsers = searchParams.get("currentUsers") ?? "";
+  const hangoutPlatformsParam = searchParams.get("hangoutPlatforms") ?? "";
+
   const tasks = generatePlan(selectedPlatforms);
   const totalXp = tasks.reduce((sum, t) => sum + t.xp, 0);
 
@@ -752,9 +860,49 @@ export default function PlanPageClient() {
   const [prevUnlockedIds, setPrevUnlockedIds] = useState<Set<string>>(new Set());
   const [celebratingBadgeId, setCelebratingBadgeId] = useState<string | null>(null);
   const [activeWeek, setActiveWeek] = useState(1);
+  const [insights, setInsights] = useState<AIInsights | null>(null);
+  const [isLoadingInsights, setIsLoadingInsights] = useState(true);
 
   const hasLoadedRef = useRef(false);
   const celebrateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Fetch AI insights on mount
+  useEffect(() => {
+    const willUsePlatforms = willUsePlatformsParam.split(",").map((p) => p.trim()).filter(Boolean);
+    const hangoutPlatforms = hangoutPlatformsParam.split(",").map((p) => p.trim()).filter(Boolean);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+    fetch("/api/generate-plan", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        productName,
+        productType,
+        audience: targetUser,
+        platforms: willUsePlatforms,
+        launchStatus,
+        userCount: currentUsers,
+        hangoutPlatforms,
+      }),
+      signal: controller.signal,
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.success) setInsights(data.insights);
+      })
+      .catch(() => {})
+      .finally(() => {
+        clearTimeout(timeoutId);
+        setIsLoadingInsights(false);
+      });
+
+    return () => {
+      controller.abort();
+      clearTimeout(timeoutId);
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -883,6 +1031,12 @@ export default function PlanPageClient() {
             for{" "}
             <span className="text-amber-400 font-semibold">{productName}</span>
           </p>
+          {insights?.customOneLiner && (
+            <p className="mt-2 text-sm text-zinc-400">
+              💡 Suggested one-liner:{" "}
+              <span className="text-zinc-200 italic">{insights.customOneLiner}</span>
+            </p>
+          )}
         </div>
 
         {/* XP Bar */}
@@ -917,6 +1071,21 @@ export default function PlanPageClient() {
             ))}
           </div>
         </div>
+
+        {/* AI section */}
+        {isLoadingInsights ? (
+          <AILoadingCard />
+        ) : (
+          <>
+            {insights?.biggestMistakeToAvoid && (
+              <MistakeWarningCard message={insights.biggestMistakeToAvoid} />
+            )}
+            {insights?.platformInsights &&
+              Object.entries(insights.platformInsights).map(([name, insight]) => (
+                <PlatformInsightCard key={name} platformName={name} insight={insight} />
+              ))}
+          </>
+        )}
 
         {/* Week Tabs */}
         <div className="flex gap-2 mb-6 flex-wrap">
