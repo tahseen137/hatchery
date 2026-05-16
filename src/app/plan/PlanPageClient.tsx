@@ -5,15 +5,12 @@ import { useState, useEffect, useCallback, useRef } from "react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface PlatformInsight {
-  communities?: string[];
-  hook?: string;
+interface AiInsights {
+  platformInsights: Record<string, string>;
+  biggestMistake: string;
 }
 
-interface AIInsights {
-  platformInsights?: Record<string, PlatformInsight>;
-  biggestMistake?: string;
-}
+type AiStatus = "idle" | "streaming" | "done" | "error";
 
 type PlatformId =
   | "reddit"
@@ -741,90 +738,6 @@ function WeekMilestoneBanner({ message }: { message: string }) {
   );
 }
 
-function AILoadingCard() {
-  return (
-    <div className="flex justify-center mb-6">
-      <div
-        className="rounded-xl px-6 py-4 flex items-center gap-3"
-        style={{
-          background: "rgba(245,158,11,0.06)",
-          border: "1px solid rgba(245,158,11,0.2)",
-        }}
-      >
-        <span
-          className="w-2.5 h-2.5 rounded-full flex-shrink-0 animate-pulse"
-          style={{ background: "#F59E0B" }}
-        />
-        <p className="text-amber-400 text-sm font-medium">🥚 Hatching your plan...</p>
-      </div>
-    </div>
-  );
-}
-
-function MistakeWarningCard({ message }: { message: string }) {
-  return (
-    <div
-      className="rounded-xl p-4 mb-6"
-      style={{
-        background: "rgba(239,68,68,0.08)",
-        border: "1px solid rgba(239,68,68,0.3)",
-      }}
-    >
-      <p className="text-sm font-medium" style={{ color: "#FCA5A5" }}>
-        ⚠️ Watch out: {message}
-      </p>
-    </div>
-  );
-}
-
-function PlatformInsightCard({
-  platformName,
-  insight,
-}: {
-  platformName: string;
-  insight: PlatformInsight;
-}) {
-  return (
-    <div
-      className="rounded-xl p-4 mb-4"
-      style={{
-        background: "rgba(245,158,11,0.06)",
-        border: "1px solid rgba(245,158,11,0.25)",
-        borderLeftWidth: "3px",
-        borderLeftColor: "#F59E0B",
-      }}
-    >
-      <p className="text-sm font-semibold text-amber-400 mb-2">
-        🤖 AI Insight — {platformName}
-      </p>
-      {insight.communities && insight.communities.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mb-2">
-          <span className="text-xs text-zinc-500 self-center">Communities:</span>
-          {insight.communities.map((c) => (
-            <span
-              key={c}
-              className="text-xs px-2 py-0.5 rounded-full font-mono"
-              style={{
-                background: "rgba(245,158,11,0.12)",
-                color: "#FCD34D",
-                border: "1px solid rgba(245,158,11,0.25)",
-              }}
-            >
-              {c}
-            </span>
-          ))}
-        </div>
-      )}
-      {insight.hook && (
-        <p className="text-sm text-zinc-300 leading-snug">
-          <span className="text-zinc-500 text-xs">Hook: </span>
-          &ldquo;{insight.hook}&rdquo;
-        </p>
-      )}
-    </div>
-  );
-}
-
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function PlanPageClient() {
@@ -836,11 +749,6 @@ export default function PlanPageClient() {
     ? platformsParam.split(",").map((p) => p.trim()).filter(Boolean)
     : [];
 
-  // Extra params for AI enrichment
-  const productType = searchParams.get("productType") ?? "";
-  const targetUser = searchParams.get("targetUser") ?? "";
-  const willUsePlatformsParam = searchParams.get("willUsePlatforms") ?? "";
-
   const tasks = generatePlan(selectedPlatforms);
   const totalXp = tasks.reduce((sum, t) => sum + t.xp, 0);
 
@@ -851,34 +759,14 @@ export default function PlanPageClient() {
   const [prevUnlockedIds, setPrevUnlockedIds] = useState<Set<string>>(new Set());
   const [celebratingBadgeId, setCelebratingBadgeId] = useState<string | null>(null);
   const [activeWeek, setActiveWeek] = useState(1);
-  const [insights, setInsights] = useState<AIInsights | null>(null);
-  const [isLoadingInsights, setIsLoadingInsights] = useState(true);
+
+  const [streamingText, setStreamingText] = useState("");
+  const [aiInsights, setAiInsights] = useState<AiInsights | null>(null);
+  const [aiStatus, setAiStatus] = useState<AiStatus>("idle");
 
   const hasLoadedRef = useRef(false);
   const celebrateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Fetch AI insights on mount
-  useEffect(() => {
-    const willUsePlatforms = willUsePlatformsParam.split(",").map((p) => p.trim()).filter(Boolean);
-
-    fetch("/api/generate-plan", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        productName,
-        productType,
-        audience: targetUser,
-        platforms: willUsePlatforms,
-      }),
-      signal: AbortSignal.timeout(25000),
-    })
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.success) setInsights(data.insights);
-      })
-      .catch(() => {})
-      .finally(() => setIsLoadingInsights(false));
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const aiStartedRef = useRef(false);
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -929,6 +817,72 @@ export default function PlanPageClient() {
     if (celebrateTimerRef.current) clearTimeout(celebrateTimerRef.current);
     celebrateTimerRef.current = setTimeout(() => setCelebratingBadgeId(null), 2500);
   }, [completedIds, streak]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Stream AI insights from /api/generate-plan on mount
+  useEffect(() => {
+    if (aiStartedRef.current || selectedPlatforms.length === 0) return;
+    aiStartedRef.current = true;
+    setAiStatus("streaming");
+
+    (async () => {
+      try {
+        const resp = await fetch("/api/generate-plan", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ productName, platforms: selectedPlatforms }),
+        });
+
+        if (!resp.ok || !resp.body) { setAiStatus("error"); return; }
+
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder();
+        let accumulated = "";
+        let buffer = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const parts = buffer.split("\n\n");
+          buffer = parts.pop() ?? "";
+
+          for (const part of parts) {
+            const dataLine = part.split("\n").find((l) => l.startsWith("data: "));
+            if (!dataLine) continue;
+            const data = dataLine.slice(6);
+
+            if (data === "[DONE]") {
+              try {
+                const stripped = accumulated
+                  .replace(/^```(?:json)?\s*/m, "")
+                  .replace(/\s*```\s*$/m, "")
+                  .trim();
+                const parsed: AiInsights = JSON.parse(stripped);
+                setAiInsights(parsed);
+                setAiStatus("done");
+              } catch {
+                setAiStatus("error");
+              }
+              return;
+            }
+
+            try {
+              const chunk = JSON.parse(data) as string;
+              accumulated += chunk;
+              setStreamingText(accumulated);
+            } catch {
+              // skip malformed chunk
+            }
+          }
+        }
+
+        setAiStatus("error");
+      } catch {
+        setAiStatus("error");
+      }
+    })();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleToggle = useCallback(
     (taskId: string) => {
@@ -1009,6 +963,62 @@ export default function PlanPageClient() {
           </p>
         </div>
 
+        {/* AI Insights */}
+        {selectedPlatforms.length > 0 && aiStatus !== "error" && aiStatus !== "idle" && (
+          <div
+            className="rounded-xl p-4 mb-4"
+            style={{
+              background: "rgba(255,255,255,0.03)",
+              border: "1px solid rgba(255,255,255,0.08)",
+            }}
+          >
+            <p className="text-zinc-500 text-xs font-medium mb-3 uppercase tracking-wider">
+              AI Insights
+            </p>
+
+            {aiStatus === "streaming" && (
+              <div className="font-mono text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed break-words">
+                {streamingText || <span className="text-zinc-600">Analyzing your launch strategy…</span>}
+                <span
+                  className="inline-block w-2 h-4 ml-0.5 align-middle animate-pulse"
+                  style={{ background: "#F59E0B" }}
+                />
+              </div>
+            )}
+
+            {aiStatus === "done" && aiInsights && (
+              <>
+                <div className="flex flex-col gap-3 mb-3">
+                  {Object.entries(aiInsights.platformInsights).map(([platform, insight]) => {
+                    const info = PLATFORM_INFO[platform as PlatformId];
+                    return (
+                      <div key={platform}>
+                        <p
+                          className="text-xs font-semibold mb-1"
+                          style={{ color: info?.color ?? "#F59E0B" }}
+                        >
+                          {info?.emoji ?? ""} {info?.name ?? platform}
+                        </p>
+                        <p className="text-sm text-zinc-400 leading-relaxed">{insight}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div
+                  className="rounded-lg p-3"
+                  style={{
+                    background: "rgba(239,68,68,0.08)",
+                    border: "1px solid rgba(239,68,68,0.2)",
+                  }}
+                >
+                  <p className="text-xs font-semibold text-red-400 mb-1">⚠ Watch Out</p>
+                  <p className="text-sm text-zinc-400 leading-relaxed">{aiInsights.biggestMistake}</p>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
         {/* XP Bar */}
         <div
           className="rounded-xl p-4 mb-4"
@@ -1041,21 +1051,6 @@ export default function PlanPageClient() {
             ))}
           </div>
         </div>
-
-        {/* AI section */}
-        {isLoadingInsights ? (
-          <AILoadingCard />
-        ) : (
-          <>
-            {insights?.biggestMistake && (
-              <MistakeWarningCard message={insights.biggestMistake} />
-            )}
-            {insights?.platformInsights &&
-              Object.entries(insights.platformInsights).map(([name, insight]) => (
-                <PlatformInsightCard key={name} platformName={name} insight={insight} />
-              ))}
-          </>
-        )}
 
         {/* Week Tabs */}
         <div className="flex gap-2 mb-6 flex-wrap">

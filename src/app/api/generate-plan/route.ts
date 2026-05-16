@@ -1,73 +1,116 @@
-import { NextRequest, NextResponse } from "next/server";
+export const maxDuration = 60;
 
-export const maxDuration = 60
+export async function POST(req: Request) {
+  const { productName, platforms } = await req.json() as {
+    productName: string;
+    platforms: string[];
+  };
 
-const OLLAMA_URL = process.env.OLLAMA_URL ?? "https://sage-ollama.rewardly.ca";
-const OLLAMA_API_KEY = process.env.OLLAMA_API_KEY ?? "Rewardly0705032";
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL ?? "gemma4:26b";
+  const ollamaUrl = process.env.OLLAMA_URL;
+  const ollamaApiKey = process.env.OLLAMA_API_KEY;
+  const ollamaModel = process.env.OLLAMA_MODEL ?? "gemma4:26b";
 
-export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
-    const { productName, productType, audience, platforms } = body;
+  if (!ollamaUrl || !platforms?.length) {
+    return new Response("data: [DONE]\n\n", {
+      headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache" },
+    });
+  }
 
-    const prompt = `You are a startup distribution expert. Give specific, actionable advice for this product launch.
+  const platformList = platforms.join(", ");
+  const platformKeys = platforms.map((p) => `"${p}"`).join(", ");
 
-Product: ${productName} (${productType})
-Audience: ${audience}
-Platforms to use: ${Array.isArray(platforms) ? platforms.join(', ') : platforms}
+  const prompt = `You are an expert startup launch advisor. Respond with ONLY a valid JSON object — no markdown, no explanation, no code fences.
 
-For each platform listed, respond with ONLY this JSON (no explanation, no markdown):
+Product: "${productName}"
+Selected distribution platforms: ${platformList}
+
+Return exactly this structure:
 {
-  "platformInsights": {
-    "Reddit": {
-      "communities": ["r/name1", "r/name2"],
-      "hook": "One specific opening angle for this product"
-    },
-    "Product Hunt": {
-      "communities": ["hunters to target"],
-      "hook": "Best tagline angle"
-    }
-  },
-  "biggestMistake": "One sentence on the #1 mistake founders make launching this type of product"
+  "platformInsights": { ${platformKeys.replace(/"/g, '"')}: "<2-3 sentence tactical insight specific to launching ${productName} on this platform>" },
+  "biggestMistake": "<one concrete mistake founders typically make when launching on these specific platforms, 1-2 sentences>"
 }
 
-Only include platforms from: ${Array.isArray(platforms) ? platforms.join(', ') : platforms}
-Be specific to this product. No generic advice.`;
+Include one entry in platformInsights for each of these platforms: ${platformList}.
+Output ONLY the JSON object.`;
 
-    try {
-      const response = await fetch(`${OLLAMA_URL}/api/chat`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${OLLAMA_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: OLLAMA_MODEL,
-          messages: [{ role: "user", content: prompt }],
-          stream: false,
-        }),
-        signal: AbortSignal.timeout(25000),
-      });
-
-      if (!response.ok) {
-        return NextResponse.json({ success: false, error: `Ollama returned ${response.status}` });
-      }
-
-      const data = await response.json();
-      const content: string = data.message?.content ?? "";
-
-      // Strip markdown code fences if present
-      const fenceMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
-      const jsonStr = fenceMatch ? fenceMatch[1].trim() : content.trim();
-
-      const parsed = JSON.parse(jsonStr);
-      return NextResponse.json({ success: true, insights: parsed });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Unknown error";
-      return NextResponse.json({ success: false, error: message });
-    }
+  let ollamaResp: Response;
+  try {
+    ollamaResp = await fetch(`${ollamaUrl}/api/chat`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${ollamaApiKey ?? ""}`,
+      },
+      body: JSON.stringify({
+        model: ollamaModel,
+        messages: [{ role: "user", content: prompt }],
+        stream: true,
+        options: { temperature: 0.5, num_predict: 512 },
+      }),
+    });
   } catch {
-    return NextResponse.json({ success: false, error: "Invalid request body" });
+    return new Response("data: [DONE]\n\n", {
+      headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache" },
+    });
   }
+
+  if (!ollamaResp.ok || !ollamaResp.body) {
+    return new Response("data: [DONE]\n\n", {
+      headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache" },
+    });
+  }
+
+  const upstream = ollamaResp.body;
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      const reader = upstream.getReader();
+      const decoder = new TextDecoder();
+      const encoder = new TextEncoder();
+      let buffer = "";
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
+
+          for (const line of lines) {
+            if (!line.trim()) continue;
+            try {
+              const parsed = JSON.parse(line) as {
+                message?: { content?: string };
+                done?: boolean;
+              };
+              if (parsed.message?.content) {
+                controller.enqueue(
+                  encoder.encode(`data: ${JSON.stringify(parsed.message.content)}\n\n`)
+                );
+              }
+              if (parsed.done) {
+                controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+              }
+            } catch {
+              // skip malformed NDJSON lines
+            }
+          }
+        }
+      } catch {
+        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+      } finally {
+        controller.close();
+        reader.releaseLock();
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+    },
+  });
 }
