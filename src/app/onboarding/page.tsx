@@ -278,7 +278,7 @@ export default function OnboardingPage() {
                 type="text"
                 value={formData.productName}
                 onChange={(e) => update("productName", e.target.value)}
-                placeholder="e.g. Rewardly Extension"
+                placeholder="e.g. LaunchKit Pro"
                 className="w-full bg-[#161B22] border border-[#21262D] rounded-lg px-4 py-3 text-white placeholder-[#8B949E] focus:outline-none focus:border-[#F5A623] transition-colors"
               />
             </div>
