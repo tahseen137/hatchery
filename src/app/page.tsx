@@ -16,7 +16,7 @@ const features = [
   {
     title: "Live Test Case",
     description:
-      "Built alongside the Rewardly Chrome Extension. Every playbook is battle-tested.",
+      "Every playbook has been tested in the real world by indie founders who've shipped. No theory.",
     icon: "🧪",
   },
 ];
@@ -53,11 +53,7 @@ export default function Home() {
           Build my launch plan →
         </Link>
 
-        <p className="mt-6 text-[#8B949E] text-sm">
-          ✓ Used to launch{" "}
-          <span className="text-white font-medium">Rewardly Extension</span> —
-          Canada&apos;s top credit card rewards tool
-        </p>
+        <p className="mt-6 text-[#8B949E] text-sm">✓ Free to use · No signup required · Your plan in 2 minutes</p>
       </section>
 
       {/* Divider */}
@@ -84,25 +80,6 @@ export default function Home() {
             </div>
           ))}
         </div>
-      </section>
-
-      {/* Live example CTA */}
-      <section className="max-w-5xl mx-auto px-6 pb-16 flex justify-center">
-        <Link
-          href="/examples/rewardly"
-          className="inline-flex items-center gap-2 text-sm font-semibold px-5 py-2.5 rounded-full transition-colors"
-          style={{
-            background: "rgba(245,166,35,0.12)",
-            border: "1px solid rgba(245,166,35,0.35)",
-            color: "#F5A623",
-          }}
-        >
-          <span
-            className="inline-block w-2 h-2 rounded-full flex-shrink-0"
-            style={{ backgroundColor: "#ef4444", boxShadow: "0 0 0 0 rgba(239,68,68,0.7)", animation: "pulse 2s infinite" }}
-          />
-          🔴 Live right now: Watch Rewardly launch in real-time →
-        </Link>
       </section>
 
       {/* Footer */}
