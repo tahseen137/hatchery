@@ -7,6 +7,7 @@ const PLATFORM_INSTRUCTIONS: Record<string, string> = {
   hn: "Write a Show HN post. Format: 'Show HN: [Product] – [tagline]' then a brief description. HN tone: humble, technical, honest. Max 100 words.",
   twitter: "Write a tweet thread (3 tweets). Tweet 1: hook/problem. Tweet 2: solution. Tweet 3: CTA with link. Each tweet max 280 chars.",
   newsletter: "Write a 2-sentence product pitch for a newsletter. Clear problem, clear solution, one CTA.",
+  investor: "Based on the task context, write the appropriate investor-related content. Use the task description to determine the format: cold email (subject + 5 sentences max), warm intro request (3 sentences), accelerator application answer (2 short paragraphs), or public traction post (2-3 sentences). Be specific, data-driven where possible, and compelling. Max 200 words.",
 };
 
 export async function POST(req: Request) {

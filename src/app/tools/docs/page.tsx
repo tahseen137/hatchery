@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import DocsClient from "./DocsClient";
+import DocsPageClient from "./DocsPageClient";
 
 function LoadingShell() {
   return (
@@ -12,7 +12,7 @@ function LoadingShell() {
 export default function DocsPage() {
   return (
     <Suspense fallback={<LoadingShell />}>
-      <DocsClient />
+      <DocsPageClient />
     </Suspense>
   );
 }

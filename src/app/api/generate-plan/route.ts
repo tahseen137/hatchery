@@ -14,31 +14,29 @@ export async function POST(req: Request) {
 
   const isFunding = goal === "funding";
 
-  if (!ollamaUrl || (!platforms?.length && !isFunding)) {
+  if (!ollamaUrl || (!isFunding && !platforms?.length)) {
     const reason = !ollamaUrl ? `NO_OLLAMA_URL(keys=${Object.keys(process.env).filter(k=>k.includes('OLLAMA')).join(',')})` : `NO_PLATFORMS(url=${ollamaUrl})`;
     return new Response(`data: ${JSON.stringify('ERR:' + reason)}\n\ndata: [DONE]\n\n`, {
       headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache" },
     });
   }
 
-  const platformList = platforms?.join(", ") || "multiple platforms";
+  const platformList = platforms?.join(", ") ?? "";
 
-  let prompt: string;
-  if (isFunding) {
-    prompt = `You are a startup investor coach. Reply with ONLY a JSON object, no markdown, no explanation.
+  const prompt = isFunding
+    ? `You are a startup fundraising advisor. Reply with ONLY a JSON object, no markdown, no explanation.
 
 Product: "${productName}"
 
 JSON format:
 {
-  "strongestSignal": "The single biggest thing working in their favor as an investor pitch (1 sentence)",
-  "biggestGap": "The most critical gap they must fix before talking to investors (1 sentence)",
-  "thirtyDayFocus": "The single most important fundraising action to take in the next 30 days (1 sentence)"
+  "strongestSignal": "The single most compelling traction signal or founder advantage to lead every investor conversation with",
+  "biggestGap": "The #1 gap investors will probe on — and one sentence on how to address it",
+  "thirtyDayFocus": "The single most important action in the next 30 days to maximize fundraising chances"
 }
 
-Output ONLY the JSON.`;
-  } else {
-    prompt = `You are a startup launch expert. Reply with ONLY a JSON object, no markdown, no explanation.
+Output ONLY the JSON.`
+    : `You are a startup launch expert. Reply with ONLY a JSON object, no markdown, no explanation.
 
 Product: "${productName}"
 Platforms: ${platformList}
@@ -51,7 +49,6 @@ JSON format:
 }
 
 Output ONLY the JSON.`;
-  }
 
   let ollamaResp: Response;
   try {

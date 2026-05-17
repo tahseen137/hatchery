@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import ListingClient from "./ListingClient";
+import ListingPageClient from "./ListingPageClient";
 
 function LoadingShell() {
   return (
@@ -12,7 +12,7 @@ function LoadingShell() {
 export default function ListingPage() {
   return (
     <Suspense fallback={<LoadingShell />}>
-      <ListingClient />
+      <ListingPageClient />
     </Suspense>
   );
 }
