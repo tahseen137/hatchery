@@ -2,26 +2,43 @@ export const runtime = 'edge';
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
-  const { productName, platforms } = await req.json() as {
+  const { productName, platforms, goal } = await req.json() as {
     productName: string;
     platforms: string[];
+    goal?: string;
   };
 
   const ollamaUrl = process.env.OLLAMA_URL;
   const ollamaApiKey = process.env.OLLAMA_API_KEY;
   const ollamaModel = process.env.OLLAMA_MODEL ?? "gemma4:26b";
 
-  if (!ollamaUrl || !platforms?.length) {
+  const isFunding = goal === "funding";
+
+  if (!ollamaUrl || (!platforms?.length && !isFunding)) {
     const reason = !ollamaUrl ? `NO_OLLAMA_URL(keys=${Object.keys(process.env).filter(k=>k.includes('OLLAMA')).join(',')})` : `NO_PLATFORMS(url=${ollamaUrl})`;
     return new Response(`data: ${JSON.stringify('ERR:' + reason)}\n\ndata: [DONE]\n\n`, {
       headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache" },
     });
   }
 
-  const platformList = platforms.join(", ");
+  const platformList = platforms?.join(", ") || "multiple platforms";
 
-  // Simplified prompt — no per-platform JSON keys (avoids key mismatch issues)
-  const prompt = `You are a startup launch expert. Reply with ONLY a JSON object, no markdown, no explanation.
+  let prompt: string;
+  if (isFunding) {
+    prompt = `You are a startup investor coach. Reply with ONLY a JSON object, no markdown, no explanation.
+
+Product: "${productName}"
+
+JSON format:
+{
+  "strongestSignal": "The single biggest thing working in their favor as an investor pitch (1 sentence)",
+  "biggestGap": "The most critical gap they must fix before talking to investors (1 sentence)",
+  "thirtyDayFocus": "The single most important fundraising action to take in the next 30 days (1 sentence)"
+}
+
+Output ONLY the JSON.`;
+  } else {
+    prompt = `You are a startup launch expert. Reply with ONLY a JSON object, no markdown, no explanation.
 
 Product: "${productName}"
 Platforms: ${platformList}
@@ -34,6 +51,7 @@ JSON format:
 }
 
 Output ONLY the JSON.`;
+  }
 
   let ollamaResp: Response;
   try {
