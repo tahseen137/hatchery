@@ -13,6 +13,20 @@ interface AiInsights {
 
 type AiStatus = "idle" | "streaming" | "done" | "error";
 
+type DraftStatus = "idle" | "loading" | "streaming" | "done" | "error";
+
+interface DraftState {
+  status: DraftStatus;
+  text: string;
+}
+
+interface DebriefResult {
+  verdict: "strong" | "decent" | "slow";
+  highlight: string;
+  gap: string;
+  weekTwoFocus: string;
+}
+
 type PlatformId =
   | "reddit"
   | "producthunt"
@@ -34,6 +48,7 @@ interface Task {
   xp: number;
   difficulty: Difficulty;
   isLaunchTask?: boolean;
+  hasDraft?: boolean;
 }
 
 interface Badge {
@@ -127,13 +142,13 @@ function generatePlan(platforms: string[]): Task[] {
       id: "u-7", day: 7, platform: "universal",
       title: "Email everyone you know personally. One sentence about what you built, one specific ask. Hit send.",
       tip: "People genuinely want to help. Give them one clear action and they will do it.",
-      xp: 50, difficulty: "hard",
+      xp: 50, difficulty: "hard", hasDraft: true,
     },
     {
       id: "u-30", day: 30, platform: "universal",
       title: "Write your '30 days of launching' post. This is your story — share it everywhere. You earned it.",
       tip: "Authentic founder stories get 10x the engagement of polished marketing. Be honest.",
-      xp: 50, difficulty: "hard",
+      xp: 50, difficulty: "hard", hasDraft: true,
     },
   );
 
@@ -161,19 +176,19 @@ function generatePlan(platforms: string[]): Task[] {
         id: "r-10", day: 10, platform: "reddit",
         title: "Draft your 'Show Reddit' post. Title, body, screenshots — everything. Don't hit submit. Not yet.",
         tip: "The best Show posts lead with the problem, not the solution. Hook them with the pain.",
-        xp: 50, difficulty: "hard",
+        xp: 50, difficulty: "hard", hasDraft: true,
       },
       {
         id: "r-12", day: 12, platform: "reddit",
         title: "🚀 Post your product to the most relevant subreddit. Answer EVERY comment within 2 hours. Be there.",
         tip: "Engagement in the first hour determines how much Reddit boosts your post.",
-        xp: 50, difficulty: "hard", isLaunchTask: true,
+        xp: 50, difficulty: "hard", isLaunchTask: true, hasDraft: true,
       },
       {
         id: "r-20", day: 20, platform: "reddit",
         title: "Post to a second subreddit with a completely different angle. Same product, new story.",
         tip: "Different subreddits care about different things. Reframe — don't copy-paste.",
-        xp: 50, difficulty: "hard",
+        xp: 50, difficulty: "hard", hasDraft: true,
       },
     );
   }
@@ -190,7 +205,7 @@ function generatePlan(platforms: string[]): Task[] {
         id: "ph-7", day: 7, platform: "producthunt",
         title: "Build your full PH listing: tagline, description, first comment, gallery images. Make it sing.",
         tip: "Your first comment sets the tone — tell your founding story there, not in the description.",
-        xp: 50, difficulty: "hard",
+        xp: 50, difficulty: "hard", hasDraft: true,
       },
       {
         id: "ph-14", day: 14, platform: "producthunt",
@@ -259,19 +274,19 @@ function generatePlan(platforms: string[]): Task[] {
         id: "tw-1", day: 1, platform: "twitter",
         title: "Write your 'building in public' intro tweet. What you're launching, why you built it. No links yet.",
         tip: "The best #buildinpublic tweets show your face and your story, not product features.",
-        xp: 25, difficulty: "medium",
+        xp: 25, difficulty: "medium", hasDraft: true,
       },
       {
         id: "tw-3", day: 3, platform: "twitter",
         title: "Tweet the problem you're solving. Describe the pain without pitching your solution. Make people nod.",
         tip: "Problem tweets get shared. Solution tweets get ignored. Lead with the pain.",
-        xp: 25, difficulty: "medium",
+        xp: 25, difficulty: "medium", hasDraft: true,
       },
       {
         id: "tw-7", day: 7, platform: "twitter",
         title: "Drop your launch thread: problem → solution → demo GIF → link. Pin it to your profile right after.",
         tip: "One GIF showing your product in action is worth more than a thousand feature bullets.",
-        xp: 50, difficulty: "hard", isLaunchTask: true,
+        xp: 50, difficulty: "hard", isLaunchTask: true, hasDraft: true,
       },
       {
         id: "tw-14", day: 14, platform: "twitter",
@@ -283,7 +298,7 @@ function generatePlan(platforms: string[]): Task[] {
         id: "tw-21", day: 21, platform: "twitter",
         title: "Drop a 'what I learned from launching' thread. Vulnerability + insight = the tweet that travels.",
         tip: "Honest failures resonate 10x more than polished wins. Show the real journey.",
-        xp: 50, difficulty: "hard",
+        xp: 50, difficulty: "hard", hasDraft: true,
       },
     );
   }
@@ -294,13 +309,13 @@ function generatePlan(platforms: string[]): Task[] {
         id: "hn-5", day: 5, platform: "hn",
         title: "Write your Show HN post. Format: 'Show HN: [Product] – [one-liner]'. Keep it humble. HN loves that.",
         tip: "HN loves brevity and honesty. If your description is over 10 words, cut it.",
-        xp: 50, difficulty: "hard",
+        xp: 50, difficulty: "hard", hasDraft: true,
       },
       {
         id: "hn-6", day: 6, platform: "hn",
         title: "🚀 Post Show HN at 9am EST on a weekday. Camp the thread for 2 hours. Answer everything.",
         tip: "The HN front page is decided in the first 2 hours. Be completely present.",
-        xp: 50, difficulty: "hard", isLaunchTask: true,
+        xp: 50, difficulty: "hard", isLaunchTask: true, hasDraft: true,
       },
     );
   }
@@ -317,7 +332,7 @@ function generatePlan(platforms: string[]): Task[] {
         id: "nl-8", day: 8, platform: "newsletter",
         title: "Submit to 3 newsletters that accept free listings. Write a tailored 2-sentence pitch for each.",
         tip: "Personalize each pitch with something specific about their newsletter. Editors spot templates.",
-        xp: 25, difficulty: "medium",
+        xp: 25, difficulty: "medium", hasDraft: true,
       },
       {
         id: "nl-22", day: 22, platform: "newsletter",
@@ -550,12 +565,28 @@ function TaskItem({
   task,
   completed,
   onToggle,
+  productName,
+  oneLiner,
+  draftState,
+  onDraft,
 }: {
   task: Task;
   completed: boolean;
   onToggle: (id: string) => void;
+  productName: string;
+  oneLiner: string;
+  draftState?: DraftState;
+  onDraft: (taskId: string, task: Task) => void;
 }) {
+  const [panelOpen, setPanelOpen] = useState(false);
   const platform = PLATFORM_INFO[task.platform];
+
+  const handleDraftClick = () => {
+    setPanelOpen(true);
+    if (!draftState || draftState.status === "idle") {
+      onDraft(task.id, task);
+    }
+  };
 
   return (
     <div
@@ -647,6 +678,71 @@ function TaskItem({
               <span className="text-zinc-600">→</span> {task.tip}
             </p>
           )}
+
+          {task.hasDraft && !completed && (
+            <div className="mt-2">
+              <button
+                type="button"
+                onClick={handleDraftClick}
+                disabled={draftState?.status === "loading" || draftState?.status === "streaming"}
+                className="text-xs px-2 py-1 rounded-md transition-colors disabled:opacity-50"
+                style={{
+                  background: "rgba(245,158,11,0.1)",
+                  border: "1px solid rgba(245,158,11,0.3)",
+                  color: "#F5A623",
+                }}
+              >
+                📝 Draft
+              </button>
+            </div>
+          )}
+
+          {task.hasDraft && panelOpen && draftState && draftState.status !== "idle" && (
+            <div
+              className="mt-3 rounded-lg p-3"
+              style={{
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.1)",
+              }}
+            >
+              {(draftState.status === "loading") && (
+                <p className="text-xs text-zinc-500">Generating draft…
+                  <span className="inline-block w-2 h-3 ml-1 align-middle animate-pulse" style={{ background: "#F59E0B" }} />
+                </p>
+              )}
+              {(draftState.status === "streaming" || draftState.status === "done") && (
+                <div className="font-mono text-xs text-zinc-300 whitespace-pre-wrap leading-relaxed break-words">
+                  {draftState.text}
+                  {draftState.status === "streaming" && (
+                    <span className="inline-block w-2 h-3 ml-0.5 align-middle animate-pulse" style={{ background: "#F59E0B" }} />
+                  )}
+                </div>
+              )}
+              {draftState.status === "error" && (
+                <p className="text-xs text-red-400">Failed to generate draft</p>
+              )}
+              <div className="mt-2 flex gap-2">
+                {draftState.status === "done" && (
+                  <button
+                    type="button"
+                    onClick={() => navigator.clipboard.writeText(draftState.text)}
+                    className="text-xs px-2 py-1 rounded-md transition-colors"
+                    style={{ background: "rgba(255,255,255,0.06)", color: "#a1a1aa" }}
+                  >
+                    Copy
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setPanelOpen(false)}
+                  className="text-xs px-2 py-1 rounded-md transition-colors"
+                  style={{ background: "rgba(255,255,255,0.06)", color: "#a1a1aa" }}
+                >
+                  ✕ Close
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -658,11 +754,19 @@ function DaySection({
   tasks,
   completedIds,
   onToggle,
+  productName,
+  oneLiner,
+  drafts,
+  onDraft,
 }: {
   day: number;
   tasks: Task[];
   completedIds: Set<string>;
   onToggle: (id: string) => void;
+  productName: string;
+  oneLiner: string;
+  drafts: Record<string, DraftState>;
+  onDraft: (taskId: string, task: Task) => void;
 }) {
   const allDone = tasks.length > 0 && tasks.every((t) => completedIds.has(t.id));
 
@@ -702,6 +806,10 @@ function DaySection({
             task={t}
             completed={completedIds.has(t.id)}
             onToggle={onToggle}
+            productName={productName}
+            oneLiner={oneLiner}
+            draftState={drafts[t.id]}
+            onDraft={onDraft}
           />
         ))}
       </div>
@@ -745,6 +853,7 @@ export default function PlanPageClient() {
   const searchParams = useSearchParams();
 
   const productName = searchParams.get("productName") ?? "Your Product";
+  const oneLiner = searchParams.get("oneLiner") ?? "";
   const platformsParam = searchParams.get("platforms") ?? "";
   const selectedPlatforms = platformsParam
     ? platformsParam.split(",").map((p) => p.trim()).filter(Boolean)
@@ -764,6 +873,10 @@ export default function PlanPageClient() {
   const [streamingText, setStreamingText] = useState("");
   const [aiInsights, setAiInsights] = useState<AiInsights | null>(null);
   const [aiStatus, setAiStatus] = useState<AiStatus>("idle");
+
+  const [drafts, setDrafts] = useState<Record<string, DraftState>>({});
+  const [debriefStatus, setDebriefStatus] = useState<"idle" | "streaming" | "done" | "error">("idle");
+  const [debriefData, setDebriefData] = useState<DebriefResult | null>(null);
 
   const hasLoadedRef = useRef(false);
   const celebrateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -909,11 +1022,122 @@ export default function PlanPageClient() {
     [completedIds, lastActivityDate, streak],
   );
 
+  const handleDraft = useCallback(async (taskId: string, task: Task) => {
+    setDrafts((prev) => ({ ...prev, [taskId]: { status: "loading", text: "" } }));
+    try {
+      const resp = await fetch("/api/generate-draft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          taskId,
+          taskTitle: task.title,
+          platform: task.platform,
+          productName,
+          oneLiner,
+        }),
+      });
+      if (!resp.ok || !resp.body) {
+        setDrafts((prev) => ({ ...prev, [taskId]: { status: "error", text: "" } }));
+        return;
+      }
+      setDrafts((prev) => ({ ...prev, [taskId]: { status: "streaming", text: "" } }));
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let sseBuffer = "";
+      let accumulated = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        sseBuffer += decoder.decode(value, { stream: true });
+        const parts = sseBuffer.split("\n\n");
+        sseBuffer = parts.pop() ?? "";
+        for (const part of parts) {
+          const dataLine = part.split("\n").find((l) => l.startsWith("data: "));
+          if (!dataLine) continue;
+          const data = dataLine.slice(6);
+          if (data === "[DONE]") {
+            setDrafts((prev) => ({ ...prev, [taskId]: { status: "done", text: accumulated } }));
+            return;
+          }
+          try {
+            const chunk = JSON.parse(data) as string;
+            accumulated += chunk;
+            setDrafts((prev) => ({ ...prev, [taskId]: { status: "streaming", text: accumulated } }));
+          } catch {
+            // skip malformed chunk
+          }
+        }
+      }
+      setDrafts((prev) => ({ ...prev, [taskId]: { status: "done", text: accumulated } }));
+    } catch {
+      setDrafts((prev) => ({ ...prev, [taskId]: { status: "error", text: "" } }));
+    }
+  }, [productName, oneLiner]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleDebrief = useCallback(async () => {
+    setDebriefStatus("streaming");
+    const week1Tasks = tasks.filter((t) => t.day >= 1 && t.day <= 7);
+    const completedTitles = week1Tasks.filter((t) => completedIds.has(t.id)).map((t) => t.title);
+    const missedTitles = week1Tasks.filter((t) => !completedIds.has(t.id)).map((t) => t.title);
+    try {
+      const resp = await fetch("/api/week-debrief", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productName,
+          platforms: selectedPlatforms,
+          completedTaskTitles: completedTitles,
+          missedTaskTitles: missedTitles,
+        }),
+      });
+      if (!resp.ok || !resp.body) { setDebriefStatus("error"); return; }
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let sseBuffer = "";
+      let accumulated = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        sseBuffer += decoder.decode(value, { stream: true });
+        const parts = sseBuffer.split("\n\n");
+        sseBuffer = parts.pop() ?? "";
+        for (const part of parts) {
+          const dataLine = part.split("\n").find((l) => l.startsWith("data: "));
+          if (!dataLine) continue;
+          const data = dataLine.slice(6);
+          if (data === "[DONE]") {
+            try {
+              const jsonMatch = accumulated.match(/\{[\s\S]*\}/);
+              if (!jsonMatch) throw new Error("no JSON");
+              const parsed: DebriefResult = JSON.parse(jsonMatch[0]);
+              setDebriefData(parsed);
+              setDebriefStatus("done");
+            } catch {
+              setDebriefStatus("error");
+            }
+            return;
+          }
+          try {
+            const chunk = JSON.parse(data) as string;
+            accumulated += chunk;
+          } catch {
+            // skip malformed chunk
+          }
+        }
+      }
+      setDebriefStatus("error");
+    } catch {
+      setDebriefStatus("error");
+    }
+  }, [tasks, completedIds, selectedPlatforms, productName]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const currentXp = tasks
     .filter((t) => completedIds.has(t.id))
     .reduce((sum, t) => sum + t.xp, 0);
 
   const badges = computeBadges(tasks, completedIds, streak);
+
+  const week1HasAnyCompleted = tasks.some((t) => t.day >= 1 && t.day <= 7 && completedIds.has(t.id));
 
   // Group tasks by day for a given week
   function getWeekDays(weekNum: number): number[] {
@@ -1131,8 +1355,78 @@ export default function PlanPageClient() {
                     tasks={getTasksForDay(day)}
                     completedIds={completedIds}
                     onToggle={handleToggle}
+                    productName={productName}
+                    oneLiner={oneLiner}
+                    drafts={drafts}
+                    onDraft={handleDraft}
                   />
                 ))
+              )}
+
+              {/* Week 1 Debrief */}
+              {w === 1 && week1HasAnyCompleted && (
+                <div className="mt-6 mb-4">
+                  {debriefStatus === "idle" && (
+                    <button
+                      type="button"
+                      onClick={handleDebrief}
+                      className="w-full py-3 rounded-xl text-sm font-semibold transition-all"
+                      style={{
+                        background: "rgba(245,158,11,0.1)",
+                        border: "1px solid rgba(245,158,11,0.3)",
+                        color: "#F5A623",
+                      }}
+                    >
+                      📊 Get Week 1 Debrief
+                    </button>
+                  )}
+
+                  {debriefStatus === "streaming" && (
+                    <div className="py-4 text-center text-zinc-500 text-sm">
+                      Analyzing your week 1…
+                      <span className="inline-block w-2 h-4 ml-1 align-middle animate-pulse" style={{ background: "#F59E0B" }} />
+                    </div>
+                  )}
+
+                  {debriefStatus === "done" && debriefData && (() => {
+                    const verdictConfig = {
+                      strong: { label: "🔥 Strong Start", bg: "rgba(34,197,94,0.15)", border: "rgba(34,197,94,0.4)", color: "#4ade80" },
+                      decent: { label: "👍 Decent Start", bg: "rgba(245,158,11,0.15)", border: "rgba(245,158,11,0.4)", color: "#fbbf24" },
+                      slow:   { label: "🐌 Slow Start",   bg: "rgba(239,68,68,0.15)",  border: "rgba(239,68,68,0.4)",  color: "#f87171" },
+                    }[debriefData.verdict];
+                    return (
+                      <div className="rounded-xl p-4" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                        <div className="flex items-center justify-between mb-4">
+                          <p className="text-zinc-500 text-xs font-medium uppercase tracking-wider">📊 Week 1 Debrief</p>
+                          <span
+                            className="px-3 py-1 rounded-full text-xs font-bold"
+                            style={{ background: verdictConfig.bg, border: `1px solid ${verdictConfig.border}`, color: verdictConfig.color }}
+                          >
+                            {verdictConfig.label}
+                          </span>
+                        </div>
+                        <div className="flex flex-col gap-3">
+                          <div className="rounded-lg p-3" style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)" }}>
+                            <p className="text-xs font-semibold text-green-400 mb-1">✅ Highlight</p>
+                            <p className="text-sm text-zinc-300 leading-relaxed">{debriefData.highlight}</p>
+                          </div>
+                          <div className="rounded-lg p-3" style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
+                            <p className="text-xs font-semibold text-red-400 mb-1">⚠ Gap</p>
+                            <p className="text-sm text-zinc-400 leading-relaxed">{debriefData.gap}</p>
+                          </div>
+                          <div className="rounded-lg p-3" style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)" }}>
+                            <p className="text-xs font-semibold text-amber-400 mb-1">🎯 Week 2 Focus</p>
+                            <p className="text-sm text-zinc-400 leading-relaxed">{debriefData.weekTwoFocus}</p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {debriefStatus === "error" && (
+                    <p className="text-sm text-red-400 text-center py-3">Failed to generate debrief — try again</p>
+                  )}
+                </div>
               )}
 
               {/* Summary for this week */}
