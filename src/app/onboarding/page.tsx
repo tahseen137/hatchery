@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+type Goal = "traction" | "funding";
+
 type FormData = {
   productName: string;
   oneLiner: string;
@@ -178,6 +180,7 @@ type AutoFillStatus = "idle" | "loading" | "success" | "error";
 export default function OnboardingPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
+  const [goal, setGoal] = useState<Goal>("traction");
   const [autoFillStatus, setAutoFillStatus] = useState<AutoFillStatus>("idle");
   const [formData, setFormData] = useState<FormData>({
     productName: "",
@@ -243,6 +246,7 @@ export default function OnboardingPage() {
       launchStatus: formData.launchStatus,
       currentUsers: formData.currentUsers,
       platforms: formData.willUsePlatforms.join(","),
+      goal,
     });
     router.push(`/plan?${params.toString()}`);
   };
@@ -270,6 +274,40 @@ export default function OnboardingPage() {
             What are you building?
           </h1>
           <div className="flex flex-col gap-5">
+            {/* Goal selector */}
+            <div>
+              <label className="block text-[#8B949E] text-sm mb-3">
+                What&apos;s your primary goal?
+              </label>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setGoal("traction")}
+                  className="flex-1 flex flex-col items-center gap-1 border rounded-xl px-4 py-3 text-sm font-semibold transition-all"
+                  style={{
+                    background: goal === "traction" ? "rgba(245,166,35,0.12)" : "rgba(255,255,255,0.03)",
+                    borderColor: goal === "traction" ? "#F5A623" : "rgba(255,255,255,0.08)",
+                    color: goal === "traction" ? "#F5A623" : "#8B949E",
+                  }}
+                >
+                  <span className="text-xl">🚀</span>
+                  <span>Get users &amp; traction</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setGoal("funding")}
+                  className="flex-1 flex flex-col items-center gap-1 border rounded-xl px-4 py-3 text-sm font-semibold transition-all"
+                  style={{
+                    background: goal === "funding" ? "rgba(139,92,246,0.12)" : "rgba(255,255,255,0.03)",
+                    borderColor: goal === "funding" ? "#8B5CF6" : "rgba(255,255,255,0.08)",
+                    color: goal === "funding" ? "#a78bfa" : "#8B949E",
+                  }}
+                >
+                  <span className="text-xl">💰</span>
+                  <span>Raise funding</span>
+                </button>
+              </div>
+            </div>
             <div>
               <label className="block text-[#8B949E] text-sm mb-2">
                 Product name
@@ -437,6 +475,7 @@ export default function OnboardingPage() {
             Here&apos;s a summary of what you told us.
           </p>
           <div className="bg-[#161B22] border border-[#21262D] rounded-xl px-6 py-2 mb-8">
+            <SummaryRow label="Goal" value={goal === "funding" ? "💰 Raise funding" : "🚀 Get users & traction"} />
             <SummaryRow label="Product" value={formData.productName || "—"} />
             <SummaryRow label="One-liner" value={formData.oneLiner || "—"} />
             {formData.url && <SummaryRow label="URL" value={formData.url} />}

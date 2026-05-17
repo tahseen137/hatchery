@@ -11,8 +11,20 @@ interface AiInsights {
   quickWin: string;
 }
 
-type AiStatus = "idle" | "streaming" | "done" | "error";
+interface FundingAiInsights {
+  strongestSignal: string;
+  biggestGap: string;
+  thirtyDayFocus: string;
+}
 
+interface ComplianceItem {
+  title: string;
+  description: string;
+  priority: "high" | "medium" | "low";
+}
+
+type AiStatus = "idle" | "streaming" | "done" | "error";
+type ComplianceStatus = "idle" | "streaming" | "done" | "error";
 type DraftStatus = "idle" | "loading" | "streaming" | "done" | "error";
 
 interface DraftState {
@@ -35,7 +47,8 @@ type PlatformId =
   | "twitter"
   | "hn"
   | "newsletter"
-  | "universal";
+  | "universal"
+  | "investor";
 
 type Difficulty = "easy" | "medium" | "hard";
 
@@ -80,6 +93,7 @@ const PLATFORM_INFO: Record<
   hn:          { name: "Hacker News",  color: "#FF6600", emoji: "🔶" },
   newsletter:  { name: "Newsletter",   color: "#9B59B6", emoji: "📧" },
   universal:   { name: "Must Do",      color: "#F59E0B", emoji: "⭐" },
+  investor:    { name: "Investor",     color: "#8B5CF6", emoji: "💰" },
 };
 
 const LEVELS = [
@@ -102,6 +116,12 @@ const WEEK_MILESTONE_MESSAGES = [
   "💪 Week 3 down. The compounding starts now.",
 ];
 
+const INVESTOR_WEEK_MILESTONE_MESSAGES = [
+  "🌱 Week 1 done! Foundation laid. Most founders never start. You did.",
+  "🤝 Week 2 done! First conversations happening. Keep the momentum.",
+  "📈 Week 3 done! You're building deal flow. The close is getting closer.",
+];
+
 const CONFETTI_PIECES = [
   { color: "#F59E0B", tx: "60px",   ty: "-90px",  delay: "0ms"   },
   { color: "#EF4444", tx: "-65px",  ty: "-80px",  delay: "30ms"  },
@@ -118,6 +138,48 @@ const CONFETTI_PIECES = [
 ];
 
 const STORAGE_KEY = "hatchery-progress-v1";
+
+// ─── Investor Tasks ───────────────────────────────────────────────────────────
+
+const INVESTOR_TASKS: Task[] = [
+  // Week 1: Foundation
+  { id: "inv-1",  day: 1,  platform: "investor", title: "Write your founder story — the 3 moments that led you here. Practice saying it in 90 seconds.", tip: "Investors fund people as much as ideas. A clear origin story builds instant trust.", xp: 25, difficulty: "medium" },
+  { id: "inv-2",  day: 2,  platform: "investor", title: "Build a target list of 20 angels and micro-VCs who invest in your category. Add to a spreadsheet.", tip: "AngelList, Crunchbase, and LinkedIn are your tools. Look who funded similar companies.", xp: 25, difficulty: "medium" },
+  { id: "inv-3",  day: 3,  platform: "investor", title: "Write your cold email template — problem, traction, ask. 5 sentences max. Then test it on a friend.", tip: "Cold emails that work: 1 line on what you do, 1 line on traction, 1 ask. That's it.", xp: 50, difficulty: "hard", hasDraft: true },
+  { id: "inv-4",  day: 4,  platform: "investor", title: "Prepare your one-paragraph traction summary. Numbers only. Growth rate beats absolute size.", tip: "Investors want momentum. '3x growth in 60 days' beats '300 users' every time.", xp: 25, difficulty: "medium", hasDraft: true },
+  { id: "inv-5",  day: 5,  platform: "investor", title: "Draft your 10-slide deck outline: problem, solution, market, traction, team, ask. Don't design yet.", tip: "Structure first. A clear outline catches logic gaps before you spend time on design.", xp: 50, difficulty: "hard", hasDraft: true },
+  { id: "inv-6",  day: 6,  platform: "investor", title: "Find 5 warm intro paths on LinkedIn. Map your network to investors on your list. Prioritize 2nd-degree.", tip: "Warm intros convert at 10x the rate of cold outreach. One good intro changes everything.", xp: 25, difficulty: "medium" },
+  { id: "inv-7",  day: 7,  platform: "investor", title: "Send your first 5 cold emails to angels. Track opens and replies in your spreadsheet.", tip: "A/B test your subject line. '3x growth' vs 'Intro from a mutual' — both work differently.", xp: 50, difficulty: "hard", hasDraft: true },
+
+  // Week 2: First Outreach
+  { id: "inv-8",  day: 8,  platform: "investor", title: "Post a public traction update on Twitter or LinkedIn. Raw numbers, real growth, no spin.", tip: "Public milestones attract inbound investor interest. Post every major metric milestone.", xp: 25, difficulty: "medium", hasDraft: true },
+  { id: "inv-9",  day: 9,  platform: "investor", title: "Request 3 warm intros from your network. Be specific about which investor and why they're a fit.", tip: "Make it easy for the introducer. Draft the intro email for them — most will use it verbatim.", xp: 50, difficulty: "hard", hasDraft: true },
+  { id: "inv-10", day: 10, platform: "investor", title: "Apply to 2 accelerator programs (YC, Techstars, or others in your category). Applications take 1 hour.", tip: "Accelerator acceptance is a strong signal to angels. Apply even if you're not sure you'd accept.", xp: 25, difficulty: "medium", hasDraft: true },
+  { id: "inv-11", day: 11, platform: "investor", title: "Build your data room: deck, key metrics dashboard, cap table. Organize in Google Drive or Notion.", tip: "A tidy data room signals operational maturity. Investors notice when things are hard to find.", xp: 50, difficulty: "hard" },
+  { id: "inv-12", day: 12, platform: "investor", title: "Send 10 more cold emails from your investor list. Personalize the opening line for each.", tip: "Reference something specific about their portfolio. 'I saw you backed X' converts better than generic.", xp: 50, difficulty: "hard", hasDraft: true },
+  { id: "inv-13", day: 13, platform: "investor", title: "First angel coffee chat. Come with 3 questions, not a pitch. Listen 80% of the time.", tip: "The best first investor meeting is a conversation, not a presentation. Ask for their perspective.", xp: 50, difficulty: "hard" },
+  { id: "inv-14", day: 14, platform: "investor", title: "Refine your deck: add a clear 'why now' slide and your unfair advantage. Cut anything that doesn't earn its slide.", tip: "Every slide should answer 'so what?' If it doesn't, cut it.", xp: 25, difficulty: "medium" },
+
+  // Week 3: Building Momentum
+  { id: "inv-15", day: 15, platform: "investor", title: "Apply to 2 more accelerators with a polished application based on your first attempt.", tip: "Iterate on applications. Each one sharpens how you tell your story.", xp: 25, difficulty: "medium", hasDraft: true },
+  { id: "inv-16", day: 16, platform: "investor", title: "Follow up on cold emails sent 7+ days ago. One short, friendly nudge. Reply rates double on follow-up.", tip: "Subject: 'Re: [original subject]'. Body: 2 sentences. Zero pressure. This is the most underused move.", xp: 10, difficulty: "easy", hasDraft: true },
+  { id: "inv-17", day: 17, platform: "investor", title: "Share a specific traction milestone publicly — a revenue update, usage number, or customer story.", tip: "Specificity builds credibility. '500 active users' beats 'growing fast' in every investor's mind.", xp: 25, difficulty: "medium", hasDraft: true },
+  { id: "inv-18", day: 18, platform: "investor", title: "Schedule 3 more angel coffee chats. Prioritize investors who backed founders in your niche.", tip: "Pattern-matching investors are faster to close. They've seen your business model win before.", xp: 25, difficulty: "medium" },
+  { id: "inv-19", day: 19, platform: "investor", title: "Add 18-month financial projections to your data room. Keep assumptions clear and conservative.", tip: "Investors don't expect perfection — they want to see that you think clearly about unit economics.", xp: 50, difficulty: "hard" },
+  { id: "inv-20", day: 20, platform: "investor", title: "Send warm intro asks to 5 investors via founder connections. Attach a 1-page overview.", tip: "A 1-pager (problem/solution/traction/ask) gives the introducer something to forward instantly.", xp: 50, difficulty: "hard", hasDraft: true },
+  { id: "inv-21", day: 21, platform: "investor", title: "Write a one-page summary of your top 5 investor conversation learnings. What objections keep coming up?", tip: "Recurring objections = gaps in your story. Address them proactively in your deck.", xp: 25, difficulty: "medium", hasDraft: true },
+
+  // Week 4: Closing
+  { id: "inv-22", day: 22, platform: "investor", title: "Coffee chats #4 and #5. By now you should have a tight pitch. Notice what lands and what doesn't.", tip: "By conversation 5 your pattern-matching kicks in. You'll know what the 'real' objection is.", xp: 50, difficulty: "hard" },
+  { id: "inv-23", day: 23, platform: "investor", title: "Post 'what 30 investor conversations taught me' thread. Vulnerability + insight travels far.", tip: "This post often generates inbound investor interest. Founders who learn publicly attract backers.", xp: 50, difficulty: "hard", hasDraft: true },
+  { id: "inv-24", day: 24, platform: "investor", title: "Send personal follow-ups to the 3 warmest prospects. Reference something from your last conversation.", tip: "Mentioning something specific they said shows you listen. That stands out in a crowded inbox.", xp: 25, difficulty: "medium", hasDraft: true },
+  { id: "inv-25", day: 25, platform: "investor", title: "Read up on standard term sheet terms: valuation cap, discount rate, pro-rata rights. 1 hour of prep.", tip: "Walking into a term sheet conversation unprepared is expensive. One hour now saves thousands later.", xp: 10, difficulty: "easy" },
+  { id: "inv-26", day: 26, platform: "investor", title: "Ask 2 founder friends for warm intros to investors they know personally. Pay it forward later.", tip: "Founders helping founders is the engine of the startup ecosystem. Ask directly and specifically.", xp: 25, difficulty: "medium", hasDraft: true },
+  { id: "inv-27", day: 27, platform: "investor", title: "Schedule follow-up calls with the 2-3 most interested investors. Come with updated traction numbers.", tip: "Fresh traction numbers on a follow-up call signal momentum. Update your deck the night before.", xp: 25, difficulty: "medium" },
+  { id: "inv-28", day: 28, platform: "investor", title: "Finalize your deck for closing conversations. Every word earns its place. Cut to 10 slides max.", tip: "Less is more. The best decks leave investors with more questions, not fewer.", xp: 50, difficulty: "hard" },
+  { id: "inv-29", day: 29, platform: "investor", title: "Organize all legal docs for potential due diligence: incorporation, IP assignments, contracts.", tip: "Clean legal house = faster close. Messy cap tables and missing assignments kill deals in due diligence.", xp: 25, difficulty: "medium" },
+  { id: "inv-30", day: 30, platform: "investor", title: "🚀 Write your public fundraising story — what you learned, what surprised you, what you'd do differently.", tip: "This post becomes a magnet for future investors, hires, and customers. Your journey is your moat.", xp: 50, difficulty: "hard", hasDraft: true, isLaunchTask: true },
+];
 
 // ─── Plan Generation ──────────────────────────────────────────────────────────
 
@@ -648,99 +710,89 @@ function TaskItem({
               <span
                 className="text-xs px-1.5 py-0.5 rounded font-mono font-bold"
                 style={{
-                  background: "rgba(245,158,11,0.15)",
+                  background: "rgba(245,158,11,0.1)",
                   color: "#F59E0B",
-                  border: "1px solid rgba(245,158,11,0.25)",
                 }}
               >
                 +{task.xp} XP
               </span>
+              <span
+                className="text-xs px-1.5 py-0.5 rounded font-semibold"
+                style={{
+                  background: `${platform.color}18`,
+                  color: platform.color,
+                }}
+              >
+                {platform.emoji} {platform.name}
+              </span>
+              <DifficultyDot difficulty={task.difficulty} />
             </div>
-          </div>
-
-          {/* Platform badge + difficulty */}
-          <div className="flex items-center gap-2 mt-1.5">
-            <span
-              className="text-xs px-1.5 py-0.5 rounded-full"
-              style={{
-                background: `${platform.color}20`,
-                color: platform.color,
-                border: `1px solid ${platform.color}40`,
-              }}
-            >
-              {platform.emoji} {platform.name}
-            </span>
-            <DifficultyDot difficulty={task.difficulty} />
           </div>
 
           {task.tip && (
-            <p className="mt-2 text-xs text-zinc-500 leading-snug">
-              <span className="text-zinc-600">→</span> {task.tip}
+            <p className="mt-1.5 text-xs text-zinc-500 leading-relaxed italic">
+              💡 {task.tip}
             </p>
           )}
 
-          {task.hasDraft && !completed && (
-            <div className="mt-2">
-              <button
-                type="button"
-                onClick={handleDraftClick}
-                disabled={draftState?.status === "loading" || draftState?.status === "streaming"}
-                className="text-xs px-2 py-1 rounded-md transition-colors disabled:opacity-50"
-                style={{
-                  background: "rgba(245,158,11,0.1)",
-                  border: "1px solid rgba(245,158,11,0.3)",
-                  color: "#F5A623",
-                }}
-              >
-                📝 Draft
-              </button>
-            </div>
-          )}
-
-          {task.hasDraft && panelOpen && draftState && draftState.status !== "idle" && (
-            <div
-              className="mt-3 rounded-lg p-3"
+          {task.hasDraft && (
+            <button
+              type="button"
+              onClick={handleDraftClick}
+              className="mt-2 text-xs px-3 py-1.5 rounded-md font-semibold transition-all"
               style={{
-                background: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(255,255,255,0.1)",
+                background: "rgba(245,158,11,0.08)",
+                border: "1px solid rgba(245,158,11,0.25)",
+                color: "#F5A623",
               }}
             >
-              {(draftState.status === "loading") && (
-                <p className="text-xs text-zinc-500">Generating draft…
-                  <span className="inline-block w-2 h-3 ml-1 align-middle animate-pulse" style={{ background: "#F59E0B" }} />
+              {draftState?.status === "loading" || draftState?.status === "streaming"
+                ? "✍ Generating…"
+                : panelOpen
+                ? "▲ Hide Draft"
+                : "✍ Draft with AI"}
+            </button>
+          )}
+
+          {panelOpen && draftState && (
+            <div
+              className="mt-2 rounded-lg p-3"
+              style={{
+                background: "rgba(0,0,0,0.3)",
+                border: "1px solid rgba(255,255,255,0.06)",
+              }}
+            >
+              {(draftState.status === "loading" || draftState.status === "streaming") && !draftState.text && (
+                <p className="text-xs text-zinc-500">
+                  Generating draft
+                  <span className="inline-block w-1.5 h-3 ml-1 align-middle animate-pulse" style={{ background: "#F59E0B" }} />
                 </p>
               )}
-              {(draftState.status === "streaming" || draftState.status === "done") && (
-                <div className="font-mono text-xs text-zinc-300 whitespace-pre-wrap leading-relaxed break-words">
+              {draftState.text && (
+                <pre className="text-xs text-zinc-300 whitespace-pre-wrap leading-relaxed font-mono break-words">
                   {draftState.text}
                   {draftState.status === "streaming" && (
-                    <span className="inline-block w-2 h-3 ml-0.5 align-middle animate-pulse" style={{ background: "#F59E0B" }} />
+                    <span className="inline-block w-1.5 h-3 ml-0.5 align-middle animate-pulse" style={{ background: "#F59E0B" }} />
                   )}
-                </div>
+                </pre>
               )}
-              {draftState.status === "error" && (
-                <p className="text-xs text-red-400">Failed to generate draft</p>
-              )}
-              <div className="mt-2 flex gap-2">
-                {draftState.status === "done" && (
-                  <button
-                    type="button"
-                    onClick={() => navigator.clipboard.writeText(draftState.text)}
-                    className="text-xs px-2 py-1 rounded-md transition-colors"
-                    style={{ background: "rgba(255,255,255,0.06)", color: "#a1a1aa" }}
-                  >
-                    Copy
-                  </button>
-                )}
+              {draftState.status === "done" && draftState.text && (
                 <button
                   type="button"
-                  onClick={() => setPanelOpen(false)}
-                  className="text-xs px-2 py-1 rounded-md transition-colors"
-                  style={{ background: "rgba(255,255,255,0.06)", color: "#a1a1aa" }}
+                  onClick={() => navigator.clipboard.writeText(draftState.text)}
+                  className="mt-2 text-xs px-2.5 py-1 rounded font-semibold"
+                  style={{
+                    background: "rgba(255,255,255,0.06)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    color: "#a1a1aa",
+                  }}
                 >
-                  ✕ Close
+                  Copy
                 </button>
-              </div>
+              )}
+              {draftState.status === "error" && (
+                <p className="text-xs text-red-400">Failed to generate — try again</p>
+              )}
             </div>
           )}
         </div>
@@ -748,6 +800,13 @@ function TaskItem({
     </div>
   );
 }
+
+const celebrationMessages: Record<number, string> = {
+  1:  "Day 1 done! The journey of a thousand users starts with a single step. 🥚",
+  7:  "Week 1 complete! You've already lapped everyone who quit on day 3. 🎉",
+  14: "Two weeks in! You're building momentum now. Keep going. 💪",
+  30: "Day 30! You finished. That's extraordinarily rare. Take a bow. 🏆",
+};
 
 function DaySection({
   day,
@@ -770,33 +829,20 @@ function DaySection({
 }) {
   const allDone = tasks.length > 0 && tasks.every((t) => completedIds.has(t.id));
 
-  const celebrationMessages: Record<number, string> = {
-    7:  "Week 1 down! You're already ahead of 90% of founders 🌱",
-    14: "Two weeks in — the momentum is getting real 🚀",
-    21: "Three weeks of consistent action. The compounding kicks in now 💪",
-    30: "You actually did it. 30 days. Full flight 🏆",
-  };
-
   return (
-    <div className="mb-6">
-      <div className="flex items-center gap-3 mb-2">
-        <div
-          className="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold"
+    <div className="mb-5">
+      <div className="flex items-center gap-3 mb-3">
+        <span
+          className="text-xs font-bold px-2.5 py-1 rounded-full flex-shrink-0"
           style={{
-            background: allDone
-              ? "rgba(245,158,11,0.15)"
-              : "rgba(255,255,255,0.06)",
-            color: allDone ? "#F59E0B" : "#a1a1aa",
-            border: `1px solid ${allDone ? "rgba(245,158,11,0.4)" : "rgba(255,255,255,0.1)"}`,
+            background: allDone ? "rgba(245,158,11,0.15)" : "rgba(255,255,255,0.06)",
+            color: allDone ? "#F59E0B" : "#52525b",
+            border: `1px solid ${allDone ? "rgba(245,158,11,0.3)" : "rgba(255,255,255,0.08)"}`,
           }}
         >
           Day {day}
-          {allDone && <span className="ml-1">✅</span>}
-        </div>
-        <div
-          className="flex-1 h-px"
-          style={{ background: "rgba(255,255,255,0.06)" }}
-        />
+        </span>
+        <div className="h-px flex-1" style={{ background: "rgba(255,255,255,0.06)" }} />
       </div>
 
       <div className="flex flex-col gap-2">
@@ -852,14 +898,20 @@ function WeekMilestoneBanner({ message }: { message: string }) {
 export default function PlanPageClient() {
   const searchParams = useSearchParams();
 
-  const productName = searchParams.get("productName") ?? "Your Product";
-  const oneLiner = searchParams.get("oneLiner") ?? "";
-  const platformsParam = searchParams.get("platforms") ?? "";
+  const productName  = searchParams.get("productName")  ?? "Your Product";
+  const oneLiner     = searchParams.get("oneLiner")      ?? "";
+  const productType  = searchParams.get("productType")   ?? "";
+  const targetUser   = searchParams.get("targetUser")    ?? "";
+  const platformsParam = searchParams.get("platforms")  ?? "";
+  const goal         = searchParams.get("goal")          ?? "traction";
+
   const selectedPlatforms = platformsParam
     ? platformsParam.split(",").map((p) => p.trim()).filter(Boolean)
     : [];
 
-  const tasks = generatePlan(selectedPlatforms);
+  const isFunding = goal === "funding";
+
+  const tasks = isFunding ? INVESTOR_TASKS : generatePlan(selectedPlatforms);
   const totalXp = tasks.reduce((sum, t) => sum + t.xp, 0);
 
   // State
@@ -872,7 +924,11 @@ export default function PlanPageClient() {
 
   const [streamingText, setStreamingText] = useState("");
   const [aiInsights, setAiInsights] = useState<AiInsights | null>(null);
+  const [fundingInsights, setFundingInsights] = useState<FundingAiInsights | null>(null);
   const [aiStatus, setAiStatus] = useState<AiStatus>("idle");
+
+  const [complianceStatus, setComplianceStatus] = useState<ComplianceStatus>("idle");
+  const [complianceItems, setComplianceItems] = useState<ComplianceItem[]>([]);
 
   const [drafts, setDrafts] = useState<Record<string, DraftState>>({});
   const [debriefStatus, setDebriefStatus] = useState<"idle" | "streaming" | "done" | "error">("idle");
@@ -932,9 +988,10 @@ export default function PlanPageClient() {
     celebrateTimerRef.current = setTimeout(() => setCelebratingBadgeId(null), 2500);
   }, [completedIds, streak]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Stream AI insights from /api/generate-plan on mount
+  // Stream AI insights on mount
   useEffect(() => {
-    if (aiStartedRef.current || selectedPlatforms.length === 0) return;
+    if (aiStartedRef.current) return;
+    if (!isFunding && selectedPlatforms.length === 0) return;
     aiStartedRef.current = true;
     setAiStatus("streaming");
 
@@ -943,7 +1000,7 @@ export default function PlanPageClient() {
         const resp = await fetch("/api/generate-plan", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ productName, platforms: selectedPlatforms }),
+          body: JSON.stringify({ productName, platforms: selectedPlatforms, goal }),
         });
 
         if (!resp.ok || !resp.body) { setAiStatus("error"); return; }
@@ -968,15 +1025,19 @@ export default function PlanPageClient() {
 
             if (data === "[DONE]") {
               try {
-                // Extract the outermost {...} block regardless of surrounding text/markdown
                 const jsonMatch = accumulated.match(/\{[\s\S]*\}/);
                 if (!jsonMatch) throw new Error("no JSON found");
-                const parsed: AiInsights = JSON.parse(jsonMatch[0]);
-                if (!parsed.biggestMistake) throw new Error("missing fields");
-                setAiInsights(parsed);
+                if (isFunding) {
+                  const parsed = JSON.parse(jsonMatch[0]) as FundingAiInsights;
+                  if (!parsed.strongestSignal) throw new Error("missing fields");
+                  setFundingInsights(parsed);
+                } else {
+                  const parsed = JSON.parse(jsonMatch[0]) as AiInsights;
+                  if (!parsed.biggestMistake) throw new Error("missing fields");
+                  setAiInsights(parsed);
+                }
                 setAiStatus("done");
               } catch {
-                // Keep streamingText visible so user sees raw output even if parse failed
                 setAiStatus("error");
               }
               return;
@@ -1131,6 +1192,56 @@ export default function PlanPageClient() {
     }
   }, [tasks, completedIds, selectedPlatforms, productName]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const handleComplianceCheck = useCallback(async () => {
+    setComplianceStatus("streaming");
+    setComplianceItems([]);
+    try {
+      const resp = await fetch("/api/compliance-check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productName, productType, targetUser, platforms: selectedPlatforms }),
+      });
+      if (!resp.ok || !resp.body) { setComplianceStatus("error"); return; }
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let sseBuffer = "";
+      let accumulated = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        sseBuffer += decoder.decode(value, { stream: true });
+        const parts = sseBuffer.split("\n\n");
+        sseBuffer = parts.pop() ?? "";
+        for (const part of parts) {
+          const dataLine = part.split("\n").find((l) => l.startsWith("data: "));
+          if (!dataLine) continue;
+          const data = dataLine.slice(6);
+          if (data === "[DONE]") {
+            try {
+              const jsonMatch = accumulated.match(/\{[\s\S]*\}/);
+              if (!jsonMatch) throw new Error("no JSON");
+              const parsed = JSON.parse(jsonMatch[0]) as { items: ComplianceItem[] };
+              setComplianceItems(parsed.items ?? []);
+              setComplianceStatus("done");
+            } catch {
+              setComplianceStatus("error");
+            }
+            return;
+          }
+          try {
+            const chunk = JSON.parse(data) as string;
+            accumulated += chunk;
+          } catch {
+            // skip malformed chunk
+          }
+        }
+      }
+      setComplianceStatus("error");
+    } catch {
+      setComplianceStatus("error");
+    }
+  }, [productName, productType, targetUser, selectedPlatforms]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const currentXp = tasks
     .filter((t) => completedIds.has(t.id))
     .reduce((sum, t) => sum + t.xp, 0);
@@ -1139,7 +1250,6 @@ export default function PlanPageClient() {
 
   const week1HasAnyCompleted = tasks.some((t) => t.day >= 1 && t.day <= 7 && completedIds.has(t.id));
 
-  // Group tasks by day for a given week
   function getWeekDays(weekNum: number): number[] {
     const [start, end] = WEEK_RANGES[weekNum - 1];
     const dayNums = new Set(
@@ -1159,6 +1269,16 @@ export default function PlanPageClient() {
     const done = weekTasks.filter((t) => completedIds.has(t.id)).length;
     return Math.round((done / weekTasks.length) * 100);
   }
+
+  const showAiSection = (isFunding || selectedPlatforms.length > 0) && aiStatus !== "idle";
+
+  const milestoneMessages = isFunding ? INVESTOR_WEEK_MILESTONE_MESSAGES : WEEK_MILESTONE_MESSAGES;
+
+  // Build tools row URLs
+  const toolsParams = new URLSearchParams({ productName });
+  const docsUrl = `/tools/docs?${toolsParams.toString()}`;
+  const listingUrlParams = new URLSearchParams({ productName, oneLiner, targetUser, productType });
+  const listingUrl = `/tools/listing?${listingUrlParams.toString()}`;
 
   return (
     <div className="min-h-screen" style={{ background: "#0a0a0a" }}>
@@ -1181,16 +1301,21 @@ export default function PlanPageClient() {
             Back
           </a>
           <h1 className="text-2xl font-bold text-white leading-tight">
-            Your 30-Day Hatchery Plan
+            {isFunding ? "Your 30-Day Fundraising Plan" : "Your 30-Day Hatchery Plan"}
           </h1>
           <p className="mt-1 text-zinc-400 text-sm">
             for{" "}
             <span className="text-amber-400 font-semibold">{productName}</span>
+            {isFunding && (
+              <span className="ml-2 text-xs px-2 py-0.5 rounded-full font-semibold" style={{ background: "rgba(139,92,246,0.15)", border: "1px solid rgba(139,92,246,0.35)", color: "#a78bfa" }}>
+                💰 Investor track
+              </span>
+            )}
           </p>
         </div>
 
         {/* AI Insights */}
-        {selectedPlatforms.length > 0 && aiStatus !== "idle" && (
+        {showAiSection && (
           <div
             className="rounded-xl p-4 mb-4"
             style={{
@@ -1204,7 +1329,7 @@ export default function PlanPageClient() {
 
             {(aiStatus === "streaming" || (aiStatus === "error" && streamingText)) && (
               <div className="font-mono text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed break-words">
-                {streamingText || <span className="text-zinc-600">Analyzing your launch strategy…</span>}
+                {streamingText || <span className="text-zinc-600">Analyzing your strategy…</span>}
                 {aiStatus === "streaming" && (
                   <span
                     className="inline-block w-2 h-4 ml-0.5 align-middle animate-pulse"
@@ -1214,15 +1339,12 @@ export default function PlanPageClient() {
               </div>
             )}
 
-            {aiStatus === "done" && aiInsights && (
+            {aiStatus === "done" && !isFunding && aiInsights && (
               <div className="flex flex-col gap-3">
                 {aiInsights.hook && (
                   <div
                     className="rounded-lg p-3"
-                    style={{
-                      background: "rgba(245,158,11,0.08)",
-                      border: "1px solid rgba(245,158,11,0.2)",
-                    }}
+                    style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)" }}
                   >
                     <p className="text-xs font-semibold text-amber-400 mb-1">🎣 Your Hook</p>
                     <p className="text-sm text-zinc-300 leading-relaxed">{aiInsights.hook}</p>
@@ -1231,10 +1353,7 @@ export default function PlanPageClient() {
                 {aiInsights.quickWin && (
                   <div
                     className="rounded-lg p-3"
-                    style={{
-                      background: "rgba(34,197,94,0.08)",
-                      border: "1px solid rgba(34,197,94,0.2)",
-                    }}
+                    style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)" }}
                   >
                     <p className="text-xs font-semibold text-green-400 mb-1">⚡ Quick Win</p>
                     <p className="text-sm text-zinc-400 leading-relaxed">{aiInsights.quickWin}</p>
@@ -1242,14 +1361,101 @@ export default function PlanPageClient() {
                 )}
                 <div
                   className="rounded-lg p-3"
-                  style={{
-                    background: "rgba(239,68,68,0.08)",
-                    border: "1px solid rgba(239,68,68,0.2)",
-                  }}
+                  style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}
                 >
                   <p className="text-xs font-semibold text-red-400 mb-1">⚠ Watch Out</p>
                   <p className="text-sm text-zinc-400 leading-relaxed">{aiInsights.biggestMistake}</p>
                 </div>
+              </div>
+            )}
+
+            {aiStatus === "done" && isFunding && fundingInsights && (
+              <div className="flex flex-col gap-3">
+                <div
+                  className="rounded-lg p-3"
+                  style={{ background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.2)" }}
+                >
+                  <p className="text-xs font-semibold mb-1" style={{ color: "#a78bfa" }}>📡 Strongest Signal</p>
+                  <p className="text-sm text-zinc-300 leading-relaxed">{fundingInsights.strongestSignal}</p>
+                </div>
+                <div
+                  className="rounded-lg p-3"
+                  style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}
+                >
+                  <p className="text-xs font-semibold text-red-400 mb-1">🔍 Biggest Gap</p>
+                  <p className="text-sm text-zinc-400 leading-relaxed">{fundingInsights.biggestGap}</p>
+                </div>
+                <div
+                  className="rounded-lg p-3"
+                  style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)" }}
+                >
+                  <p className="text-xs font-semibold text-amber-400 mb-1">🎯 30-Day Focus</p>
+                  <p className="text-sm text-zinc-400 leading-relaxed">{fundingInsights.thirtyDayFocus}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Compliance Check */}
+            {aiStatus === "done" && (
+              <div className="mt-4 pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                {complianceStatus === "idle" && (
+                  <button
+                    type="button"
+                    onClick={handleComplianceCheck}
+                    className="w-full py-2.5 rounded-lg text-sm font-semibold transition-all"
+                    style={{
+                      background: "rgba(245,158,11,0.08)",
+                      border: "1px solid rgba(245,158,11,0.25)",
+                      color: "#F5A623",
+                    }}
+                  >
+                    ⚖️ Compliance Check — legal items before launch
+                  </button>
+                )}
+
+                {complianceStatus === "streaming" && (
+                  <div className="py-2 text-center text-zinc-500 text-sm">
+                    Checking compliance…
+                    <span className="inline-block w-2 h-4 ml-1 align-middle animate-pulse" style={{ background: "#F59E0B" }} />
+                  </div>
+                )}
+
+                {complianceStatus === "done" && complianceItems.length > 0 && (
+                  <div>
+                    <p className="text-zinc-500 text-xs font-medium mb-3 uppercase tracking-wider">⚖️ Compliance Checklist</p>
+                    <div className="flex flex-col gap-2">
+                      {complianceItems.map((item, i) => {
+                        const priorityConfig = {
+                          high:   { bg: "rgba(239,68,68,0.08)",   border: "rgba(239,68,68,0.2)",   badge: "rgba(239,68,68,0.15)",   badgeBorder: "rgba(239,68,68,0.4)",   color: "#f87171",  label: "HIGH"   },
+                          medium: { bg: "rgba(245,158,11,0.08)",  border: "rgba(245,158,11,0.2)",  badge: "rgba(245,158,11,0.15)",  badgeBorder: "rgba(245,158,11,0.4)",  color: "#fbbf24",  label: "MED"    },
+                          low:    { bg: "rgba(74,222,128,0.06)",  border: "rgba(74,222,128,0.15)", badge: "rgba(74,222,128,0.12)",  badgeBorder: "rgba(74,222,128,0.3)",  color: "#4ade80",  label: "LOW"    },
+                        }[item.priority] ?? { bg: "rgba(255,255,255,0.03)", border: "rgba(255,255,255,0.08)", badge: "rgba(255,255,255,0.06)", badgeBorder: "rgba(255,255,255,0.1)", color: "#a1a1aa", label: "?" };
+                        return (
+                          <div
+                            key={i}
+                            className="rounded-lg p-3"
+                            style={{ background: priorityConfig.bg, border: `1px solid ${priorityConfig.border}` }}
+                          >
+                            <div className="flex items-start gap-2 justify-between">
+                              <p className="text-sm font-semibold text-zinc-200 leading-snug">{item.title}</p>
+                              <span
+                                className="text-[10px] font-bold px-1.5 py-0.5 rounded flex-shrink-0"
+                                style={{ background: priorityConfig.badge, border: `1px solid ${priorityConfig.badgeBorder}`, color: priorityConfig.color }}
+                              >
+                                {priorityConfig.label}
+                              </span>
+                            </div>
+                            <p className="mt-1 text-xs text-zinc-400 leading-relaxed">{item.description}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {complianceStatus === "error" && (
+                  <p className="text-sm text-red-400 text-center py-2">Failed to check compliance — try again</p>
+                )}
               </div>
             )}
           </div>
@@ -1315,7 +1521,6 @@ export default function PlanPageClient() {
                     {pct}%
                   </span>
                 )}
-                {/* Bottom progress bar within the tab */}
                 {pct > 0 && (
                   <div
                     className="absolute bottom-0 left-0 h-0.5"
@@ -1337,9 +1542,8 @@ export default function PlanPageClient() {
         {[1, 2, 3, 4].map((w) =>
           activeWeek === w ? (
             <div key={w}>
-              {/* Milestone banner for weeks 2-4 */}
               {w > 1 && (
-                <WeekMilestoneBanner message={WEEK_MILESTONE_MESSAGES[w - 2]} />
+                <WeekMilestoneBanner message={milestoneMessages[w - 2]} />
               )}
 
               {getWeekDays(w).length === 0 ? (
@@ -1430,14 +1634,46 @@ export default function PlanPageClient() {
               )}
 
               {/* Summary for this week */}
-              <div
-                className="mt-4 mb-2 text-right text-xs text-zinc-600"
-              >
+              <div className="mt-4 mb-2 text-right text-xs text-zinc-600">
                 {weekCompletionPct(w)}% of Week {w} complete
               </div>
             </div>
           ) : null,
         )}
+
+        {/* Tools row */}
+        <div
+          className="mt-8 pt-6 flex items-center gap-3 flex-wrap"
+          style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}
+        >
+          <span className="text-zinc-600 text-xs font-medium mr-1">Tools:</span>
+          <a
+            href={docsUrl}
+            className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium transition-colors"
+            style={{
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              color: "#71717a",
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "#e4e4e7"; (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(255,255,255,0.2)"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "#71717a"; (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(255,255,255,0.08)"; }}
+          >
+            📄 Legal Docs
+          </a>
+          <a
+            href={listingUrl}
+            className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium transition-colors"
+            style={{
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              color: "#71717a",
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "#e4e4e7"; (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(255,255,255,0.2)"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "#71717a"; (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(255,255,255,0.08)"; }}
+          >
+            📦 Store Listing
+          </a>
+        </div>
       </div>
     </div>
   );

@@ -1,54 +1,72 @@
 export const runtime = 'edge';
 export const maxDuration = 60;
 
+const PLATFORM_PROMPTS: Record<string, string> = {
+  'chrome-web-store': `Generate Chrome Web Store listing copy. Reply with ONLY this JSON:
+{
+  "name": "product name (max 45 chars)",
+  "shortDescription": "short description shown in search results (max 132 chars)",
+  "description": "full store description — lead with benefits, use line breaks for readability (max 1000 chars)",
+  "category": "most relevant Chrome Web Store category (e.g. Productivity, Developer Tools, etc.)"
+}`,
+
+  'app-store': `Generate Apple App Store listing copy. Reply with ONLY this JSON:
+{
+  "name": "app name (max 30 chars)",
+  "subtitle": "short tagline shown below app name (max 30 chars)",
+  "description": "full app description — lead with the core benefit, use bullet points or short paragraphs (max 4000 chars)",
+  "keywords": "comma-separated keywords for App Store search (max 100 chars total)"
+}`,
+
+  'play-store': `Generate Google Play Store listing copy. Reply with ONLY this JSON:
+{
+  "title": "app title (max 50 chars)",
+  "shortDescription": "short description shown in search results (max 80 chars)",
+  "fullDescription": "full store description — use clear sections, highlight key features and benefits (max 4000 chars)"
+}`,
+
+  'product-hunt': `Generate Product Hunt launch copy. Reply with ONLY this JSON:
+{
+  "tagline": "punchy one-line description shown under the product name (max 60 chars)",
+  "description": "2-3 sentences for the product description — what it does, who it's for, key differentiator",
+  "firstComment": "3-4 sentences for the founder's first comment — your story, what problem you solved, invite feedback"
+}`,
+};
+
 export async function POST(req: Request) {
-  const { productName, platforms, goal } = await req.json() as {
+  const { platform, productName, oneLiner, targetUser, productType } = await req.json() as {
+    platform: 'chrome-web-store' | 'app-store' | 'play-store' | 'product-hunt';
     productName: string;
-    platforms: string[];
-    goal?: string;
+    oneLiner: string;
+    targetUser: string;
+    productType: string;
   };
 
   const ollamaUrl = process.env.OLLAMA_URL;
   const ollamaApiKey = process.env.OLLAMA_API_KEY;
   const ollamaModel = process.env.OLLAMA_MODEL ?? "gemma4:26b";
 
-  const isFunding = goal === "funding";
-
-  if (!ollamaUrl || (!isFunding && !platforms?.length)) {
-    const reason = !ollamaUrl ? `NO_OLLAMA_URL(keys=${Object.keys(process.env).filter(k=>k.includes('OLLAMA')).join(',')})` : `NO_PLATFORMS(url=${ollamaUrl})`;
-    return new Response(`data: ${JSON.stringify('ERR:' + reason)}\n\ndata: [DONE]\n\n`, {
+  if (!ollamaUrl) {
+    return new Response(`data: ${JSON.stringify("ERR:NO_OLLAMA_URL")}\n\ndata: [DONE]\n\n`, {
       headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache" },
     });
   }
 
-  const platformList = platforms?.join(", ") ?? "";
+  const platformInstructions = PLATFORM_PROMPTS[platform];
+  if (!platformInstructions) {
+    return new Response(`data: ${JSON.stringify("ERR:INVALID_PLATFORM")}\n\ndata: [DONE]\n\n`, {
+      headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache" },
+    });
+  }
 
-  const prompt = isFunding
-    ? `You are a startup fundraising advisor. Reply with ONLY a JSON object, no markdown, no explanation.
+  const prompt = `Product: "${productName}"
+Description: "${oneLiner}"
+Product type: "${productType || "Software"}"
+Target user: "${targetUser || "general consumers"}"
 
-Product: "${productName}"
+${platformInstructions}
 
-JSON format:
-{
-  "strongestSignal": "The single most compelling traction signal or founder advantage to lead every investor conversation with",
-  "biggestGap": "The #1 gap investors will probe on — and one sentence on how to address it",
-  "thirtyDayFocus": "The single most important action in the next 30 days to maximize fundraising chances"
-}
-
-Output ONLY the JSON.`
-    : `You are a startup launch expert. Reply with ONLY a JSON object, no markdown, no explanation.
-
-Product: "${productName}"
-Platforms: ${platformList}
-
-JSON format:
-{
-  "hook": "One punchy sentence to open every post on these platforms",
-  "biggestMistake": "The #1 mistake founders make launching on ${platformList}",
-  "quickWin": "The single fastest action to get first traction"
-}
-
-Output ONLY the JSON.`;
+Output ONLY the JSON object, no markdown, no explanation.`;
 
   let ollamaResp: Response;
   try {
@@ -68,13 +86,11 @@ Output ONLY the JSON.`;
       redirect: 'follow',
     });
   } catch (e) {
-    const msg = `ERR:FETCH_FAILED:${String(e)}`;
-    return new Response(`data: ${JSON.stringify(msg)}\n\ndata: [DONE]\n\n`, {
+    return new Response(`data: ${JSON.stringify("ERR:FETCH_FAILED:" + String(e))}\n\ndata: [DONE]\n\n`, {
       headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache" },
     });
   }
 
-  // Handle redirects manually (edge runtime doesn't reliably follow POST redirects)
   if (ollamaResp.status === 307 || ollamaResp.status === 308 || ollamaResp.status === 301 || ollamaResp.status === 302) {
     const location = ollamaResp.headers.get('location');
     if (location) {
@@ -94,8 +110,7 @@ Output ONLY the JSON.`;
           }),
         });
       } catch (e) {
-        const msg = `ERR:REDIRECT_FETCH_FAILED:${location}:${String(e)}`;
-        return new Response(`data: ${JSON.stringify(msg)}\n\ndata: [DONE]\n\n`, {
+        return new Response(`data: ${JSON.stringify("ERR:REDIRECT_FAILED:" + String(e))}\n\ndata: [DONE]\n\n`, {
           headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache" },
         });
       }
@@ -103,15 +118,12 @@ Output ONLY the JSON.`;
   }
 
   if (!ollamaResp.ok || !ollamaResp.body) {
-    const calledUrl = `${ollamaUrl.replace(/\/$/, '')}/api/chat`;
-    const msg = `ERR:STATUS:${ollamaResp.status} calledUrl=${calledUrl} model=${ollamaModel}`;
-    return new Response(`data: ${JSON.stringify(msg)}\n\ndata: [DONE]\n\n`, {
+    return new Response(`data: ${JSON.stringify("ERR:STATUS:" + ollamaResp.status)}\n\ndata: [DONE]\n\n`, {
       headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache" },
     });
   }
 
   const upstream = ollamaResp.body;
-
   const stream = new ReadableStream({
     async start(controller) {
       const reader = upstream.getReader();
@@ -135,23 +147,20 @@ Output ONLY the JSON.`;
                 message?: { content?: string };
                 done?: boolean;
               };
-              // Skip thinking-only chunks (gemma4:26b extended thinking phase)
               const content = parsed.message?.content;
               if (content) {
-                controller.enqueue(
-                  encoder.encode(`data: ${JSON.stringify(content)}\n\n`)
-                );
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify(content)}\n\n`));
               }
               if (parsed.done) {
                 controller.enqueue(encoder.encode("data: [DONE]\n\n"));
               }
             } catch {
-              // skip malformed NDJSON lines
+              // skip malformed NDJSON
             }
           }
         }
       } catch (streamErr) {
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify('ERR:STREAM_CATCH:' + String(streamErr))}\n\n`));
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify("ERR:STREAM:" + String(streamErr))}\n\n`));
         controller.enqueue(encoder.encode("data: [DONE]\n\n"));
       } finally {
         controller.close();

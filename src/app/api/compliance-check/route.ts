@@ -1,25 +1,13 @@
 export const runtime = 'edge';
 export const maxDuration = 60;
 
-const PLATFORM_INSTRUCTIONS: Record<string, string> = {
-  reddit: "Write a Reddit post for r/[relevant subreddit]. Title + body. Lead with the problem, not the product. Sound like a real person. Max 200 words.",
-  producthunt: "Write a Product Hunt first comment (the founder's intro comment). Personal story, what problem it solves, invite feedback. Max 150 words.",
-  hn: "Write a Show HN post. Format: 'Show HN: [Product] – [tagline]' then a brief description. HN tone: humble, technical, honest. Max 100 words.",
-  twitter: "Write a tweet thread (3 tweets). Tweet 1: hook/problem. Tweet 2: solution. Tweet 3: CTA with link. Each tweet max 280 chars.",
-  newsletter: "Write a 2-sentence product pitch for a newsletter. Clear problem, clear solution, one CTA.",
-  investor: "Based on the task context, write the appropriate investor-related content. Use the task description to determine the format: cold email (subject + 5 sentences max), warm intro request (3 sentences), accelerator application answer (2 short paragraphs), or public traction post (2-3 sentences). Be specific, data-driven where possible, and compelling. Max 200 words.",
-};
-
 export async function POST(req: Request) {
-  const { taskId, taskTitle, platform, productName, oneLiner } = await req.json() as {
-    taskId: string;
-    taskTitle: string;
-    platform: string;
+  const { productName, productType, targetUser, platforms } = await req.json() as {
     productName: string;
-    oneLiner: string;
+    productType: string;
+    targetUser: string;
+    platforms: string[];
   };
-
-  void taskId;
 
   const ollamaUrl = process.env.OLLAMA_URL;
   const ollamaApiKey = process.env.OLLAMA_API_KEY;
@@ -31,13 +19,28 @@ export async function POST(req: Request) {
     });
   }
 
-  const instruction = PLATFORM_INSTRUCTIONS[platform] ?? "Write a short launch announcement for this product. Max 150 words.";
+  const prompt = `You are a startup legal advisor. Reply with ONLY a JSON object, no markdown, no explanation.
 
-  const prompt = `Product: "${productName}"
-Description: "${oneLiner}"
-Task context: "${taskTitle}"
+Product: "${productName}"
+Product type: "${productType || "Software"}"
+Target user: "${targetUser || "general consumers"}"
+Distribution platforms: ${platforms?.length ? platforms.join(", ") : "web"}
 
-${instruction}`;
+Return the 5 most important compliance and legal items this founder must address before or shortly after launching. Be specific to their product type and target user.
+
+JSON format (output ONLY this JSON, no markdown):
+{
+  "items": [
+    {
+      "title": "Short title (5 words max)",
+      "description": "1-2 sentences: what needs to be done and why it matters",
+      "priority": "high"
+    }
+  ]
+}
+
+Priority values: "high" = must do before launch, "medium" = first 30 days, "low" = good to have soon.
+Output ONLY the JSON object.`;
 
   let ollamaResp: Response;
   try {
@@ -52,14 +55,40 @@ ${instruction}`;
         messages: [{ role: "user", content: prompt }],
         stream: true,
         think: false,
-        options: { temperature: 0.4, num_predict: 2048 },
+        options: { temperature: 0.6, num_predict: 2048 },
       }),
-      redirect: "follow",
+      redirect: 'follow',
     });
   } catch (e) {
     return new Response(`data: ${JSON.stringify("ERR:FETCH_FAILED:" + String(e))}\n\ndata: [DONE]\n\n`, {
       headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache" },
     });
+  }
+
+  if (ollamaResp.status === 307 || ollamaResp.status === 308 || ollamaResp.status === 301 || ollamaResp.status === 302) {
+    const location = ollamaResp.headers.get('location');
+    if (location) {
+      try {
+        ollamaResp = await fetch(location, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${ollamaApiKey ?? ""}`,
+          },
+          body: JSON.stringify({
+            model: ollamaModel,
+            messages: [{ role: "user", content: prompt }],
+            stream: true,
+            think: false,
+            options: { temperature: 0.6, num_predict: 2048 },
+          }),
+        });
+      } catch (e) {
+        return new Response(`data: ${JSON.stringify("ERR:REDIRECT_FAILED:" + String(e))}\n\ndata: [DONE]\n\n`, {
+          headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache" },
+        });
+      }
+    }
   }
 
   if (!ollamaResp.ok || !ollamaResp.body) {
@@ -105,7 +134,7 @@ ${instruction}`;
           }
         }
       } catch (streamErr) {
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify("ERR:STREAM_CATCH:" + String(streamErr))}\n\n`));
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify("ERR:STREAM:" + String(streamErr))}\n\n`));
         controller.enqueue(encoder.encode("data: [DONE]\n\n"));
       } finally {
         controller.close();
