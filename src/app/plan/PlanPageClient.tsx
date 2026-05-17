@@ -27,6 +27,20 @@ interface DebriefResult {
   weekTwoFocus: string;
 }
 
+interface InvestorInsights {
+  strongestSignal: string;
+  biggestGap: string;
+  thirtyDayFocus: string;
+}
+
+interface ComplianceItem {
+  title: string;
+  description: string;
+  priority: "high" | "medium" | "low";
+}
+
+type ComplianceStatus = "idle" | "streaming" | "done" | "error";
+
 type PlatformId =
   | "reddit"
   | "producthunt"
@@ -118,6 +132,46 @@ const CONFETTI_PIECES = [
 ];
 
 const STORAGE_KEY = "hatchery-progress-v1";
+
+// ─── Investor Task Plan ───────────────────────────────────────────────────────
+
+const INVESTOR_TASKS: Task[] = [
+  // Week 1: Foundation
+  { id: "inv-1a", day: 1, platform: "universal", title: "Write a one-paragraph investor narrative: problem, solution, why you, why now.", tip: "Investors fund stories, not features. Lead with the pain you witnessed personally.", xp: 30, difficulty: "hard", hasDraft: true },
+  { id: "inv-1b", day: 1, platform: "universal", title: "Identify your 3 strongest traction signals (users, revenue, waitlist, partnerships). Write them down as 1 bullet each.", tip: "Concrete numbers beat vague claims. Even 10 paying users is a strong signal.", xp: 20, difficulty: "medium" },
+  { id: "inv-2",  day: 2, platform: "universal", title: "Optimize your LinkedIn headline and about section for investors. Mention the problem you're solving.", tip: "Investors search LinkedIn before taking meetings. Make it easy for them to say yes.", xp: 20, difficulty: "medium" },
+  { id: "inv-3",  day: 3, platform: "twitter",   title: "Write and post a Twitter thread: why you're building this, what you've discovered, what you're looking for.", tip: "Founders who share their journey publicly attract inbound investor interest.", xp: 30, difficulty: "hard", hasDraft: true },
+  { id: "inv-4",  day: 4, platform: "universal", title: "Identify 20 target angels and VCs on AngelList, Twitter, and LinkedIn. Log them in a spreadsheet with their focus areas.", tip: "Warm intros convert 10× better than cold outreach. Map your network to these 20 investors first.", xp: 20, difficulty: "medium" },
+  { id: "inv-5",  day: 5, platform: "universal", title: "Set up a simple data room: Google Drive with deck, one-pager, key metrics, and team bio.", tip: "A clean data room signals operational seriousness. Keep it under 5 files.", xp: 30, difficulty: "hard" },
+  { id: "inv-6",  day: 6, platform: "universal", title: "Draft your cold outreach email template — one paragraph, clear ask, specific reason for this investor.", tip: "Reference a specific portfolio company or tweet that shows you did your homework.", xp: 25, difficulty: "hard", hasDraft: true },
+  { id: "inv-7",  day: 7, platform: "universal", title: "Review your pitch deck slide by slide. Each slide should pass the 10-second test: would a stranger get it?", tip: "The problem slide is the most important. If it doesn't make investors feel the pain, nothing else matters.", xp: 25, difficulty: "hard" },
+  // Week 2: First outreach
+  { id: "inv-8",  day: 8, platform: "universal", title: "Send 10 warm intro requests via LinkedIn or mutual connections. One message per investor.", tip: "Ask your mutual to forward a 2-sentence blurb from you. Don't write the intro for them.", xp: 40, difficulty: "hard", hasDraft: true },
+  { id: "inv-9",  day: 9, platform: "universal", title: "Apply to Y Combinator if a batch is open. It takes 2 hours and the upside is enormous.", tip: "YC founders report that the application process alone clarified their pitch significantly.", xp: 30, difficulty: "hard" },
+  { id: "inv-10", day: 10, platform: "universal", title: "Apply to Antler, Entrepreneur First, or the best local accelerator for your market.", tip: "Accelerators give you credibility, capital, and a co-investor signal for future rounds.", xp: 25, difficulty: "medium" },
+  { id: "inv-11", day: 11, platform: "twitter",   title: "Post your first public metrics update: what you launched, what happened, what you learned.", tip: "Transparency builds trust with investors before you've even met them.", xp: 25, difficulty: "medium", hasDraft: true },
+  { id: "inv-12", day: 12, platform: "universal", title: "Follow up with everyone you contacted in week 1 who hasn't responded. One short, polite email.", tip: "80% of investor meetings come from the follow-up, not the first email.", xp: 20, difficulty: "medium" },
+  { id: "inv-13", day: 13, platform: "universal", title: "Get at least one investor coffee chat scheduled. No deck needed — just a conversation.", tip: "The goal of the first meeting is a second meeting, not a term sheet.", xp: 40, difficulty: "hard", isLaunchTask: true },
+  { id: "inv-14", day: 14, platform: "universal", title: "After your first investor conversation, update your pitch based on their questions and objections.", tip: "Each conversation reveals a new gap. Document the questions so you never get caught twice.", xp: 30, difficulty: "hard" },
+  // Week 3: Scale outreach
+  { id: "inv-15", day: 15, platform: "universal", title: "Send 20 cold emails to angels using your refined template. Personalize the first line for each.", tip: "A 5% reply rate on cold outreach is excellent. Don't get discouraged by silence.", xp: 40, difficulty: "hard", hasDraft: true },
+  { id: "inv-16", day: 16, platform: "universal", title: "Follow up on all warm intros that haven't moved to a meeting yet. Keep it concise and positive.", tip: "Persistence is professional in fundraising. Investors expect follow-ups.", xp: 20, difficulty: "medium" },
+  { id: "inv-17", day: 17, platform: "twitter",   title: "Post your second public metrics update. Show week-over-week progress, even if small.", tip: "Consistent public updates make investors track you. They may reach out when you hit a milestone.", xp: 25, difficulty: "medium", hasDraft: true },
+  { id: "inv-18", day: 18, platform: "universal", title: "Pitch at 2 local founder events or startup communities. Get comfortable saying your elevator pitch out loud.", tip: "Event pitching builds confidence and generates unexpected introductions.", xp: 30, difficulty: "hard" },
+  { id: "inv-19", day: 19, platform: "universal", title: "Update your data room with the latest traction numbers and any investor feedback you've incorporated.", tip: "A live data room shows investors you're organized and moving fast.", xp: 15, difficulty: "easy" },
+  { id: "inv-20", day: 20, platform: "universal", title: "Prepare written answers to the 5 most common investor objections you've heard so far.", tip: "Knowing objections in advance lets you address them proactively, before they're raised.", xp: 25, difficulty: "medium" },
+  { id: "inv-21", day: 21, platform: "universal", title: "Research the portfolio of every investor currently in conversation. Find connection points to their existing bets.", tip: "Investors want to understand how you fit their thesis. Show you've done that work.", xp: 20, difficulty: "medium" },
+  // Week 4: Close
+  { id: "inv-22", day: 22, platform: "universal", title: "Follow up on all open conversations. Move each one to a clear next step: meeting, pass, or re-engage later.", tip: "Every conversation should end with a defined next action. No open-ended \"let's stay in touch\".", xp: 30, difficulty: "hard", hasDraft: true },
+  { id: "inv-23", day: 23, platform: "universal", title: "Have 3 advisor commitment conversations. Advisors can open investor doors and validate your cap table.", tip: "Ask for 0.1–0.25% equity. Good advisors make introductions — that's their primary value.", xp: 35, difficulty: "hard" },
+  { id: "inv-24", day: 24, platform: "universal", title: "Post '30 days of fundraising: what I learned' on LinkedIn. Be honest about what worked and what didn't.", tip: "Vulnerability in public builds trust and often surfaces investors you didn't know were watching.", xp: 40, difficulty: "hard", hasDraft: true },
+  { id: "inv-25", day: 25, platform: "universal", title: "Apply to 2 more accelerator programs or angel syndicates that fit your stage.", tip: "Applications cost time, not money. The more shots on goal, the better.", xp: 25, difficulty: "medium" },
+  { id: "inv-26", day: 26, platform: "universal", title: "Identify your most promising lead investor and move them toward a decision. Ask directly what they need to commit.", tip: "A lead investor makes all other conversations easier. Focus your energy on closing one.", xp: 35, difficulty: "hard" },
+  { id: "inv-27", day: 27, platform: "universal", title: "Prepare a simple term sheet overview: what you're raising, at what valuation, and what you need from investors.", tip: "Know your numbers before the investor brings theirs. Founders who know their terms project confidence.", xp: 20, difficulty: "medium" },
+  { id: "inv-28", day: 28, platform: "universal", title: "Send a progress update to all investors in your pipeline — meetings had, traction since last update, next milestone.", tip: "Creating FOMO through momentum updates is a legitimate and effective fundraising tactic.", xp: 25, difficulty: "medium", hasDraft: true },
+  { id: "inv-29", day: 29, platform: "universal", title: "Consult a startup lawyer about entity structure, cap table, and SAFEs or convertible notes.", tip: "Legal structure mistakes are expensive to fix later. A 1-hour consultation pays for itself.", xp: 20, difficulty: "medium" },
+  { id: "inv-30", day: 30, platform: "universal", title: "Write your '30-day fundraising retrospective'. What traction moved investors most? What would you do differently?", tip: "The founders who reflect and document compound faster than those who just execute.", xp: 50, difficulty: "hard", hasDraft: true },
+];
 
 // ─── Plan Generation ──────────────────────────────────────────────────────────
 
@@ -854,12 +908,16 @@ export default function PlanPageClient() {
 
   const productName = searchParams.get("productName") ?? "Your Product";
   const oneLiner = searchParams.get("oneLiner") ?? "";
+  const productType = searchParams.get("productType") ?? "";
+  const targetUser = searchParams.get("targetUser") ?? "";
   const platformsParam = searchParams.get("platforms") ?? "";
+  const goal = searchParams.get("goal") ?? "traction";
+  const isFunding = goal === "funding";
   const selectedPlatforms = platformsParam
     ? platformsParam.split(",").map((p) => p.trim()).filter(Boolean)
     : [];
 
-  const tasks = generatePlan(selectedPlatforms);
+  const tasks = isFunding ? INVESTOR_TASKS : generatePlan(selectedPlatforms);
   const totalXp = tasks.reduce((sum, t) => sum + t.xp, 0);
 
   // State
@@ -877,6 +935,9 @@ export default function PlanPageClient() {
   const [drafts, setDrafts] = useState<Record<string, DraftState>>({});
   const [debriefStatus, setDebriefStatus] = useState<"idle" | "streaming" | "done" | "error">("idle");
   const [debriefData, setDebriefData] = useState<DebriefResult | null>(null);
+  const [investorInsights, setInvestorInsights] = useState<InvestorInsights | null>(null);
+  const [complianceStatus, setComplianceStatus] = useState<ComplianceStatus>("idle");
+  const [complianceItems, setComplianceItems] = useState<ComplianceItem[]>([]);
 
   const hasLoadedRef = useRef(false);
   const celebrateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -934,7 +995,7 @@ export default function PlanPageClient() {
 
   // Stream AI insights from /api/generate-plan on mount
   useEffect(() => {
-    if (aiStartedRef.current || selectedPlatforms.length === 0) return;
+    if (aiStartedRef.current || (selectedPlatforms.length === 0 && !isFunding)) return;
     aiStartedRef.current = true;
     setAiStatus("streaming");
 
@@ -943,7 +1004,7 @@ export default function PlanPageClient() {
         const resp = await fetch("/api/generate-plan", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ productName, platforms: selectedPlatforms }),
+          body: JSON.stringify({ productName, platforms: selectedPlatforms, goal }),
         });
 
         if (!resp.ok || !resp.body) { setAiStatus("error"); return; }
@@ -968,15 +1029,19 @@ export default function PlanPageClient() {
 
             if (data === "[DONE]") {
               try {
-                // Extract the outermost {...} block regardless of surrounding text/markdown
                 const jsonMatch = accumulated.match(/\{[\s\S]*\}/);
                 if (!jsonMatch) throw new Error("no JSON found");
-                const parsed: AiInsights = JSON.parse(jsonMatch[0]);
-                if (!parsed.biggestMistake) throw new Error("missing fields");
-                setAiInsights(parsed);
+                if (isFunding) {
+                  const parsed: InvestorInsights = JSON.parse(jsonMatch[0]);
+                  if (!parsed.strongestSignal) throw new Error("missing fields");
+                  setInvestorInsights(parsed);
+                } else {
+                  const parsed: AiInsights = JSON.parse(jsonMatch[0]);
+                  if (!parsed.biggestMistake) throw new Error("missing fields");
+                  setAiInsights(parsed);
+                }
                 setAiStatus("done");
               } catch {
-                // Keep streamingText visible so user sees raw output even if parse failed
                 setAiStatus("error");
               }
               return;
@@ -1131,6 +1196,47 @@ export default function PlanPageClient() {
     }
   }, [tasks, completedIds, selectedPlatforms, productName]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const handleComplianceCheck = useCallback(async () => {
+    setComplianceStatus("streaming");
+    setComplianceItems([]);
+    try {
+      const resp = await fetch("/api/compliance-check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productName, productType, targetUser, platforms: selectedPlatforms }),
+      });
+      if (!resp.ok || !resp.body) { setComplianceStatus("error"); return; }
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let sseBuffer = "";
+      let accumulated = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        sseBuffer += decoder.decode(value, { stream: true });
+        const parts = sseBuffer.split("\n\n");
+        sseBuffer = parts.pop() ?? "";
+        for (const part of parts) {
+          const dataLine = part.split("\n").find((l) => l.startsWith("data: "));
+          if (!dataLine) continue;
+          const data = dataLine.slice(6);
+          if (data === "[DONE]") {
+            try {
+              const jsonMatch = accumulated.match(/\{[\s\S]*\}/);
+              if (!jsonMatch) throw new Error("no JSON");
+              const parsed: { items: ComplianceItem[] } = JSON.parse(jsonMatch[0]);
+              setComplianceItems(parsed.items ?? []);
+              setComplianceStatus("done");
+            } catch { setComplianceStatus("error"); }
+            return;
+          }
+          try { accumulated += JSON.parse(data) as string; } catch { /* skip */ }
+        }
+      }
+      setComplianceStatus("error");
+    } catch { setComplianceStatus("error"); }
+  }, [productName, productType, targetUser, selectedPlatforms]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const currentXp = tasks
     .filter((t) => completedIds.has(t.id))
     .reduce((sum, t) => sum + t.xp, 0);
@@ -1181,7 +1287,7 @@ export default function PlanPageClient() {
             Back
           </a>
           <h1 className="text-2xl font-bold text-white leading-tight">
-            Your 30-Day Hatchery Plan
+            {isFunding ? "Your 30-Day Fundraising Plan" : "Your 30-Day Hatchery Plan"}
           </h1>
           <p className="mt-1 text-zinc-400 text-sm">
             for{" "}
@@ -1190,7 +1296,7 @@ export default function PlanPageClient() {
         </div>
 
         {/* AI Insights */}
-        {selectedPlatforms.length > 0 && aiStatus !== "idle" && (
+        {(selectedPlatforms.length > 0 || isFunding) && aiStatus !== "idle" && (
           <div
             className="rounded-xl p-4 mb-4"
             style={{
@@ -1199,57 +1305,103 @@ export default function PlanPageClient() {
             }}
           >
             <p className="text-zinc-500 text-xs font-medium mb-3 uppercase tracking-wider">
-              🤖 AI Insights
+              🤖 {isFunding ? "Investor Insights" : "AI Insights"}
             </p>
 
             {(aiStatus === "streaming" || (aiStatus === "error" && streamingText)) && (
               <div className="font-mono text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed break-words">
-                {streamingText || <span className="text-zinc-600">Analyzing your launch strategy…</span>}
+                {streamingText || <span className="text-zinc-600">{isFunding ? "Analyzing your investor readiness…" : "Analyzing your launch strategy…"}</span>}
                 {aiStatus === "streaming" && (
-                  <span
-                    className="inline-block w-2 h-4 ml-0.5 align-middle animate-pulse"
-                    style={{ background: "#F59E0B" }}
-                  />
+                  <span className="inline-block w-2 h-4 ml-0.5 align-middle animate-pulse" style={{ background: "#F59E0B" }} />
                 )}
               </div>
             )}
 
-            {aiStatus === "done" && aiInsights && (
+            {aiStatus === "done" && isFunding && investorInsights && (
+              <div className="flex flex-col gap-3">
+                <div className="rounded-lg p-3" style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)" }}>
+                  <p className="text-xs font-semibold text-green-400 mb-1">📈 Strongest Signal for Investors</p>
+                  <p className="text-sm text-zinc-300 leading-relaxed">{investorInsights.strongestSignal}</p>
+                </div>
+                <div className="rounded-lg p-3" style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
+                  <p className="text-xs font-semibold text-red-400 mb-1">🔧 Biggest Gap to Fix</p>
+                  <p className="text-sm text-zinc-400 leading-relaxed">{investorInsights.biggestGap}</p>
+                </div>
+                <div className="rounded-lg p-3" style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)" }}>
+                  <p className="text-xs font-semibold text-amber-400 mb-1">🎯 30-Day Focus</p>
+                  <p className="text-sm text-zinc-400 leading-relaxed">{investorInsights.thirtyDayFocus}</p>
+                </div>
+              </div>
+            )}
+
+            {aiStatus === "done" && !isFunding && aiInsights && (
               <div className="flex flex-col gap-3">
                 {aiInsights.hook && (
-                  <div
-                    className="rounded-lg p-3"
-                    style={{
-                      background: "rgba(245,158,11,0.08)",
-                      border: "1px solid rgba(245,158,11,0.2)",
-                    }}
-                  >
+                  <div className="rounded-lg p-3" style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)" }}>
                     <p className="text-xs font-semibold text-amber-400 mb-1">🎣 Your Hook</p>
                     <p className="text-sm text-zinc-300 leading-relaxed">{aiInsights.hook}</p>
                   </div>
                 )}
                 {aiInsights.quickWin && (
-                  <div
-                    className="rounded-lg p-3"
-                    style={{
-                      background: "rgba(34,197,94,0.08)",
-                      border: "1px solid rgba(34,197,94,0.2)",
-                    }}
-                  >
+                  <div className="rounded-lg p-3" style={{ background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)" }}>
                     <p className="text-xs font-semibold text-green-400 mb-1">⚡ Quick Win</p>
                     <p className="text-sm text-zinc-400 leading-relaxed">{aiInsights.quickWin}</p>
                   </div>
                 )}
-                <div
-                  className="rounded-lg p-3"
-                  style={{
-                    background: "rgba(239,68,68,0.08)",
-                    border: "1px solid rgba(239,68,68,0.2)",
-                  }}
-                >
+                <div className="rounded-lg p-3" style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
                   <p className="text-xs font-semibold text-red-400 mb-1">⚠ Watch Out</p>
                   <p className="text-sm text-zinc-400 leading-relaxed">{aiInsights.biggestMistake}</p>
                 </div>
+              </div>
+            )}
+
+            {/* Compliance Check */}
+            {aiStatus === "done" && (
+              <div className="mt-4 pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                {complianceStatus === "idle" && (
+                  <button
+                    type="button"
+                    onClick={handleComplianceCheck}
+                    className="flex items-center gap-2 text-xs px-3 py-2 rounded-lg transition-colors"
+                    style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", color: "#71717a" }}
+                  >
+                    ⚖️ Compliance Check
+                  </button>
+                )}
+                {complianceStatus === "streaming" && (
+                  <p className="text-xs text-zinc-500">
+                    Checking compliance…
+                    <span className="inline-block w-2 h-3 ml-1 align-middle animate-pulse" style={{ background: "#F59E0B" }} />
+                  </p>
+                )}
+                {complianceStatus === "error" && (
+                  <p className="text-xs text-red-400">Compliance check failed — try again.</p>
+                )}
+                {complianceStatus === "done" && complianceItems.length > 0 && (
+                  <div>
+                    <p className="text-zinc-500 text-xs font-medium mb-3 uppercase tracking-wider">⚖️ Pre-Launch Compliance</p>
+                    <div className="flex flex-col gap-2">
+                      {complianceItems.map((item, i) => {
+                        const priorityStyle = {
+                          high:   { bg: "rgba(239,68,68,0.1)",   border: "rgba(239,68,68,0.3)",   badge: "rgba(239,68,68,0.15)",   badgeBorder: "rgba(239,68,68,0.4)",   color: "#f87171", label: "High" },
+                          medium: { bg: "rgba(245,158,11,0.08)", border: "rgba(245,158,11,0.2)",  badge: "rgba(245,158,11,0.15)",  badgeBorder: "rgba(245,158,11,0.4)",  color: "#fbbf24", label: "Medium" },
+                          low:    { bg: "rgba(34,197,94,0.08)",  border: "rgba(34,197,94,0.2)",   badge: "rgba(34,197,94,0.15)",   badgeBorder: "rgba(34,197,94,0.4)",   color: "#4ade80", label: "Low" },
+                        }[item.priority] ?? { bg: "rgba(255,255,255,0.04)", border: "rgba(255,255,255,0.1)", badge: "rgba(255,255,255,0.1)", badgeBorder: "rgba(255,255,255,0.2)", color: "#71717a", label: item.priority };
+                        return (
+                          <div key={i} className="rounded-lg p-3" style={{ background: priorityStyle.bg, border: `1px solid ${priorityStyle.border}` }}>
+                            <div className="flex items-start justify-between gap-2 mb-1">
+                              <p className="text-sm font-medium text-zinc-200">{item.title}</p>
+                              <span className="flex-shrink-0 text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: priorityStyle.badge, border: `1px solid ${priorityStyle.badgeBorder}`, color: priorityStyle.color }}>
+                                {priorityStyle.label}
+                              </span>
+                            </div>
+                            <p className="text-xs text-zinc-400 leading-relaxed">{item.description}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -1331,6 +1483,24 @@ export default function PlanPageClient() {
               </button>
             );
           })}
+        </div>
+
+        {/* Tools Row */}
+        <div className="flex gap-2 mb-6 flex-wrap">
+          <a
+            href={`/tools/docs?productName=${encodeURIComponent(productName)}`}
+            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-colors"
+            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#71717a" }}
+          >
+            📄 Legal Docs
+          </a>
+          <a
+            href={`/tools/listing?productName=${encodeURIComponent(productName)}&oneLiner=${encodeURIComponent(oneLiner)}&targetUser=${encodeURIComponent(targetUser)}&productType=${encodeURIComponent(productType)}`}
+            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-colors"
+            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#71717a" }}
+          >
+            📦 Store Listing
+          </a>
         </div>
 
         {/* Week Content */}

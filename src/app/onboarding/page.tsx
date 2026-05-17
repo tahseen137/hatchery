@@ -13,6 +13,7 @@ type FormData = {
   launchStatus: string;
   currentUsers: string;
   willUsePlatforms: string[];
+  goal: string;
 };
 
 const TOTAL_STEPS = 5;
@@ -189,6 +190,7 @@ export default function OnboardingPage() {
     launchStatus: "",
     currentUsers: "",
     willUsePlatforms: [],
+    goal: "traction",
   });
 
   const update = <K extends keyof FormData>(key: K, value: FormData[K]) => {
@@ -243,6 +245,7 @@ export default function OnboardingPage() {
       launchStatus: formData.launchStatus,
       currentUsers: formData.currentUsers,
       platforms: formData.willUsePlatforms.join(","),
+      goal: formData.goal,
     });
     router.push(`/plan?${params.toString()}`);
   };
@@ -270,6 +273,32 @@ export default function OnboardingPage() {
             What are you building?
           </h1>
           <div className="flex flex-col gap-5">
+            <div>
+              <label className="block text-[#8B949E] text-sm mb-2">
+                What&apos;s your primary goal?
+              </label>
+              <div className="flex gap-3">
+                {([
+                  { value: "traction", label: "🚀 Get users & traction" },
+                  { value: "funding", label: "💰 Raise funding" },
+                ] as const).map(({ value, label }) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => update("goal", value)}
+                    className="flex-1 py-3 px-4 rounded-xl text-sm font-semibold transition-all"
+                    style={{
+                      background: formData.goal === value ? "rgba(245,158,11,0.15)" : "rgba(255,255,255,0.04)",
+                      border: `2px solid ${formData.goal === value ? "#F5A623" : "rgba(255,255,255,0.1)"}`,
+                      color: formData.goal === value ? "#F5A623" : "#71717a",
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div>
               <label className="block text-[#8B949E] text-sm mb-2">
                 Product name
