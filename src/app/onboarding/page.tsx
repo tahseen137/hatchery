@@ -173,9 +173,12 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+type AutoFillStatus = "idle" | "loading" | "success" | "error";
+
 export default function OnboardingPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
+  const [autoFillStatus, setAutoFillStatus] = useState<AutoFillStatus>("idle");
   const [formData, setFormData] = useState<FormData>({
     productName: "",
     oneLiner: "",
@@ -194,6 +197,40 @@ export default function OnboardingPage() {
 
   const next = () => setStep((s) => Math.min(s + 1, TOTAL_STEPS));
   const back = () => setStep((s) => Math.max(s - 1, 1));
+
+  const handleAutoFill = async () => {
+    if (!formData.url) return;
+    setAutoFillStatus("loading");
+    try {
+      const resp = await fetch("/api/analyze-product", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: formData.url, productName: formData.productName }),
+      });
+      const data = await resp.json() as {
+        oneLiner?: string;
+        productType?: string;
+        targetUser?: string;
+        error?: string;
+      };
+      if (data.error || !data.oneLiner) {
+        setAutoFillStatus("error");
+        setTimeout(() => setAutoFillStatus("idle"), 3000);
+        return;
+      }
+      setFormData((prev) => ({
+        ...prev,
+        oneLiner: data.oneLiner ? data.oneLiner.slice(0, 100) : prev.oneLiner,
+        productType: data.productType && PRODUCT_TYPES.includes(data.productType) ? data.productType : prev.productType,
+        targetUser: data.targetUser && TARGET_USERS.includes(data.targetUser) ? data.targetUser : prev.targetUser,
+      }));
+      setAutoFillStatus("success");
+      setTimeout(() => setAutoFillStatus("idle"), 3000);
+    } catch {
+      setAutoFillStatus("error");
+      setTimeout(() => setAutoFillStatus("idle"), 3000);
+    }
+  };
 
   const generate = () => {
     const params = new URLSearchParams({
@@ -275,6 +312,27 @@ export default function OnboardingPage() {
                 placeholder="https://"
                 className="w-full bg-[#161B22] border border-[#21262D] rounded-lg px-4 py-3 text-white placeholder-[#8B949E] focus:outline-none focus:border-[#F5A623] transition-colors"
               />
+              <div className="flex items-center gap-3 mt-2">
+                <button
+                  type="button"
+                  onClick={handleAutoFill}
+                  disabled={!formData.url || autoFillStatus === "loading"}
+                  className="text-xs px-3 py-1.5 rounded-md font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={{
+                    background: "rgba(245,166,35,0.15)",
+                    border: "1px solid rgba(245,166,35,0.4)",
+                    color: "#F5A623",
+                  }}
+                >
+                  {autoFillStatus === "loading" ? "Analyzing…" : "✨ Auto-fill"}
+                </button>
+                {autoFillStatus === "success" && (
+                  <span className="text-xs text-green-400">✅ Fields filled from your site</span>
+                )}
+                {autoFillStatus === "error" && (
+                  <span className="text-xs text-amber-400">⚠ Couldn&apos;t read the site — fill manually</span>
+                )}
+              </div>
             </div>
             <div>
               <label className="block text-[#8B949E] text-sm mb-3">
